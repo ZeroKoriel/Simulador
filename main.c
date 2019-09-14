@@ -45,6 +45,10 @@ static void on_changed (GtkComboBox *widget, gpointer   user_data)
       prosessPlanificador->algoritmoActual = APrioridad;
       printf("%s\n", "Cambia a planificación por prioridad");
       break;
+    case 4:
+      prosessPlanificador->algoritmoActual = tiempoReal;
+      printf("%s\n", "Cambia a planificación por tiempo real");
+      break;
     default:
       printf("%s\n", "Opción no soportada por el combobox");
       break;
@@ -80,7 +84,7 @@ static void activate (GtkApplication *app, gpointer user_data)
   
   /* Create the combo box and append your string values to it. */
   combo_box = gtk_combo_box_text_new ();
-  const char *algoritmos[] = {"Seleccione un algoritmo", "Round Robin", "FCFS", "P. Prioridad"};
+  const char *algoritmos[] = {"Seleccione un algoritmo", "Round Robin", "FCFS", "P. Prioridad", "Tiempo real"};
 
  
   /* G_N_ELEMENTS is a macro which determines the number of elements in an array.*/ 

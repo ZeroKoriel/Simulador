@@ -31,8 +31,8 @@ void initHilos() {
 		process[i] = calloc(1, sizeof(Process));
 		process[i]->info = calloc(1, sizeof(processInfo));
 		process[i]->info->id = prosessPlanificador->cantidadDeProcesos++;
-		process[i]->info->prioridad = (rand() % 9) +1;
-		process[i]->info->quantum = 0;
+		process[i]->info->quantum = (rand() % 9) +1;
+		process[i]->info->prioridad = 100 / process[i]->info->quantum;
 		process[i]->info->estado = bloqueado;
 		process[i]->info->contadorPrograma = 0;
 		process[i]->info->ejecutar = false;
@@ -83,7 +83,9 @@ void algoritmoFCFS() {
 			temp->info->estado = ejecucion;
 			ejecutar(temp);
 			cambiar = false;
-			while (!cambiar)
+			while (!cambiar){
+				usleep(50);
+			}
 			/*Espera a que el proceso salga*/
 			cambioDeContexto(temp);
 		}
@@ -100,8 +102,8 @@ void algoritmoRoundRobin() {
 			cambiar = false;
 			
 			ejecutar(temp);
-			
-			while (temp->info->quantum-- > 0) {
+			int i = 0;
+			while (i++ < temp->info->quantum) {
 				usleep(50);   /*Supuesto valor de cada quantum*/
 			}
 			
@@ -120,14 +122,47 @@ void algoritmoPorPrioridad() {
 			cambiar = false;
 			
 			ejecutar(temp);
-			
-			while (temp->info->quantum-- > 0) {
+			int i = 0;
+			while (i++ < temp->info->quantum) {
 				usleep(50);   /*Supuesto valor de cada quantum*/
 			}
 			
 			cambioDeContexto(temp);
 		}
 	}
+}
+
+void algoritmoTR_RMS() {
+	if (prosessPlanificador->cListo->cantidadNodos > 0 && esPlanificableRMS()) {
+		Process* temp = (Process*) obtener(prosessPlanificador->cListo, 0);
+		eliminarElemento(prosessPlanificador->cListo, 0);
+		if (temp) {
+			temp->info->estado = ejecucion;
+			temp->info->quantum = 5;
+			cambiar = false;
+			
+			ejecutar(temp);
+			int i = 0;
+			while (i++ < temp->info->quantum) {
+				usleep(50);   /*Supuesto valor de cada quantum*/
+			}
+			
+			cambioDeContexto(temp);
+		}
+	}	
+}
+
+bool esPlanificableRMS() {
+	int i;
+	float suma = 0;
+	Process* temp;
+
+	for (i = 0; i < prosessPlanificador->cListo->cantidadNodos; ++i)
+	{
+		temp = (Process*) obtener(prosessPlanificador->cListo, i);
+		suma += (temp->info->quantum /100);
+	}
+	return suma < 1;
 }
 
 void ordenarPorPrioridad() {
@@ -200,6 +235,9 @@ void* runPlanificador(void* args) {
 			case APrioridad:
 				algoritmoPorPrioridad();
 				break;
+			case tiempoReal:
+				algoritmoTR_RMS();
+				break;
 			default:
 				printf("%s\n", "Opción no soportada");
 		}
@@ -227,6 +265,8 @@ void shedTask() {
 		case APrioridad:
 			goto alPrioridad;
 			break;
+		case tiempoReal:
+			goto alPrioridad;
 		default:
 			break;
 	}
