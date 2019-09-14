@@ -1,0 +1,6 @@
+#ifndef ARCHIVOBUSINESS_H
+#define ARCHIVOBUSINESS_H 
+
+
+
+#endif
