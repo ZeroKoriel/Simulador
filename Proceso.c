@@ -35,7 +35,6 @@ void initHilos() {
 		process[i]->info->prioridad = 100 / process[i]->info->quantum;
 		process[i]->info->estado = bloqueado;
 		process[i]->info->contadorPrograma = 0;
-		process[i]->info->ejecutar = false;
 		
 		pthread_create(&(process[i]->hilo), NULL, (void*)runProceso, (void*)(process[i]->info));
 		insertarFinal(prosessPlanificador->cBloqueado, (void*)process[i]);
@@ -69,6 +68,7 @@ void cambioDeContexto(Process* proceso) {
 void eliminarProceso(Process* proceso) {
 	if (proceso->info) {
 		free(proceso->info);
+		proceso->info = NULL;
 	}
 	free(proceso);
 	proceso = NULL;
@@ -98,15 +98,13 @@ void algoritmoRoundRobin() {
 		eliminarElemento(prosessPlanificador->cListo, 0);
 		if (temp) {
 			temp->info->estado = ejecucion;
-			temp->info->quantum = 5;
 			cambiar = false;
 			
 			ejecutar(temp);
-			int i = 0;
-			while (i++ < temp->info->quantum) {
-				usleep(50);   /*Supuesto valor de cada quantum*/
+		
+			while(!cambiar) {
+				usleep(50);
 			}
-			
 			cambioDeContexto(temp);
 		}
 	}
@@ -118,15 +116,13 @@ void algoritmoPorPrioridad() {
 		eliminarElemento(prosessPlanificador->cListo, 0);
 		if (temp) {
 			temp->info->estado = ejecucion;
-			temp->info->quantum = 5;
 			cambiar = false;
 			
 			ejecutar(temp);
-			int i = 0;
-			while (i++ < temp->info->quantum) {
-				usleep(50);   /*Supuesto valor de cada quantum*/
-			}
 			
+			while(!cambiar) {
+				usleep(50);
+			}
 			cambioDeContexto(temp);
 		}
 	}
@@ -138,15 +134,13 @@ void algoritmoTR_RMS() {
 		eliminarElemento(prosessPlanificador->cListo, 0);
 		if (temp) {
 			temp->info->estado = ejecucion;
-			temp->info->quantum = 5;
 			cambiar = false;
 			
 			ejecutar(temp);
-			int i = 0;
-			while (i++ < temp->info->quantum) {
-				usleep(50);   /*Supuesto valor de cada quantum*/
-			}
 			
+			while(!cambiar) {
+				usleep(50);
+			}
 			cambioDeContexto(temp);
 		}
 	}	
@@ -313,19 +307,21 @@ void* runProceso(void* args) {
 	srand(time(NULL));
 	int valor;
 	while (info->contadorPrograma < MAXL) {
-		if (!info->ejecutar) {
+		srand(time(NULL));
+		if (info->quantum == 0) {
 			info->estado = listo;
 			cambiar = true;
 			pthread_cond_wait(&(info->cond), &(info->mutex));
 		}
 
-		valor= rand() % 1000;
-		if (valor < 500) {
+		valor= rand() % 1000000;
+		if (valor < 500000) {
 			info->estado = bloqueado;
 			cambiar = true;
 			pthread_cond_wait(&(info->cond), &(info->mutex));
 		}
 		++info->contadorPrograma;
+		--info->quantum;
 	}
 	pthread_mutex_unlock(&(info->mutex));
 	cambiar = true;
@@ -400,25 +396,29 @@ void mostrarInformacion() {
 	int i; 
 	char p[20];
 	Process* temp;
-	
-	sprintf(p, "Proceso %d", prosessPlanificador->enEjecucion->info->id);
-	procesoEnEjecucion = strdup(p);
-
+	if (prosessPlanificador->enEjecucion->info) {
+		sprintf(p, "Proceso %d", prosessPlanificador->enEjecucion->info->id);
+		procesoEnEjecucion = strdup(p);
+	}
 	for (i = 0; i < prosessPlanificador->cListo->cantidadNodos; ++i)
 	{
 		temp = (Process*) obtener(prosessPlanificador->cListo, i);
-		if (i < 10) {			
+		if (temp->info) {
+			if (i < 10) {			
 			sprintf(p,"Proceso %d p: %d", temp->info->id, temp->info->prioridad);
 			listaListos[i] = strdup(p);
+			}
 		}
 	}
 
 	for (i = 0; i < prosessPlanificador->cBloqueado->cantidadNodos; ++i)
 	{
 		temp = (Process*) obtener(prosessPlanificador->cBloqueado, i);
-		if (i < 10) {
+		if (temp->info) {
+			if (i < 10) {
 			sprintf(p,"Proceso %d p: %d", temp->info->id, temp->info->prioridad);	
 			listaBloqueados[i] = strdup(p);
+			}
 		}
 	}
 }

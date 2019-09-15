@@ -54,7 +54,6 @@ typedef struct processInfo
 	int quantum;
 	int contadorPrograma;
 	palabraEstado estado;
-	bool ejecutar;
 	pthread_cond_t cond;
 	pthread_mutex_t mutex;
 }processInfo;

@@ -6,8 +6,6 @@ main.o:
 	$(CC) -c main.c `pkg-config --cflags gtk+-3.0` `pkg-config --libs gtk+-3.0`
 Proceso.o:
 	$(CC) -c Proceso.h Proceso.c `pkg-config --cflags gtk+-3.0` `pkg-config --libs gtk+-3.0`
-#Cola.o:
-#	$(CC) -c ADT/Cola.h ADT/Cola.c 
 Nodo.o:
 	$(CC) -c ADT/Nodo.h ADT/Nodo.c 
 Lista.o:
