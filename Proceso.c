@@ -2,8 +2,6 @@
 
 
 void initPlanificador(){
-	cambiar = false;
-
 	/*Inicializa las variables para mostrar la información de los hilos*/
 	procesoEnEjecucion = calloc(1, sizeof(char));
     listaListos = calloc(10, sizeof(char*));
@@ -35,7 +33,8 @@ void initHilos() {
 		process[i]->info->prioridad = 100 / process[i]->info->quantum;
 		process[i]->info->estado = bloqueado;
 		process[i]->info->contadorPrograma = 0;
-		
+		leerArchivo(process[i]->info);
+
 		pthread_create(&(process[i]->hilo), NULL, (void*)runProceso, (void*)(process[i]->info));
 		insertarFinal(prosessPlanificador->cBloqueado, (void*)process[i]);
 	}
@@ -43,8 +42,13 @@ void initHilos() {
 
 /*Guarda al proceso en ejecución y le da la señal para que inicie*/
 void ejecutar(Process* proceso) {
+	pthread_mutex_lock(&mPlanificador);
+
 	prosessPlanificador->enEjecucion = proceso;
 	pthread_cond_signal(&(proceso->info->cond));
+
+	pthread_cond_wait(&cPlanificador, &mPlanificador);
+	pthread_mutex_unlock(&mPlanificador);
 }
 
 /*Asigna un proceso a una cola dependiendo de su estado*/
@@ -82,11 +86,6 @@ void algoritmoFCFS() {
 		if (temp) {
 			temp->info->estado = ejecucion;
 			ejecutar(temp);
-			cambiar = false;
-			while (!cambiar){
-				usleep(50);
-			}
-			/*Espera a que el proceso salga*/
 			cambioDeContexto(temp);
 		}
 	}
@@ -98,13 +97,7 @@ void algoritmoRoundRobin() {
 		eliminarElemento(prosessPlanificador->cListo, 0);
 		if (temp) {
 			temp->info->estado = ejecucion;
-			cambiar = false;
-			
 			ejecutar(temp);
-		
-			while(!cambiar) {
-				usleep(50);
-			}
 			cambioDeContexto(temp);
 		}
 	}
@@ -116,13 +109,7 @@ void algoritmoPorPrioridad() {
 		eliminarElemento(prosessPlanificador->cListo, 0);
 		if (temp) {
 			temp->info->estado = ejecucion;
-			cambiar = false;
-			
 			ejecutar(temp);
-			
-			while(!cambiar) {
-				usleep(50);
-			}
 			cambioDeContexto(temp);
 		}
 	}
@@ -134,13 +121,7 @@ void algoritmoTR_RMS() {
 		eliminarElemento(prosessPlanificador->cListo, 0);
 		if (temp) {
 			temp->info->estado = ejecucion;
-			cambiar = false;
-			
 			ejecutar(temp);
-			
-			while(!cambiar) {
-				usleep(50);
-			}
 			cambioDeContexto(temp);
 		}
 	}	
@@ -304,33 +285,36 @@ void* runProceso(void* args) {
 	processInfo* info = (processInfo*) args;
 	pthread_mutex_lock(&(info->mutex));
 	pthread_cond_wait(&(info->cond), &(info->mutex));
-	srand(time(NULL));
+	
 	int valor;
 	while (info->contadorPrograma < MAXL) {
-		srand(time(NULL));
-		if (info->quantum == 0) {
-			info->estado = listo;
-			cambiar = true;
+		if (revisarInterrupciones()) {
+			info->estado = bloqueado;
+			pthread_cond_signal(&cPlanificador);
 			pthread_cond_wait(&(info->cond), &(info->mutex));
 		}
-
-		valor= rand() % 1000000;
-		if (valor < 500000) {
-			info->estado = bloqueado;
-			cambiar = true;
-			pthread_cond_wait(&(info->cond), &(info->mutex));
+		
+		if (prosessPlanificador->algoritmoActual != AFcfs) {
+			--info->quantum;
+			if (info->quantum == 0) {
+				info->estado = listo;
+				pthread_cond_signal(&cPlanificador);
+				pthread_cond_wait(&(info->cond), &(info->mutex));
+			}
 		}
 		++info->contadorPrograma;
-		--info->quantum;
+		usleep(100);
 	}
 	pthread_mutex_unlock(&(info->mutex));
-	cambiar = true;
+	pthread_cond_signal(&cPlanificador);
 	info->estado = terminado;
 }
 
 /*En proceso, preguntar*/
-void revisarInterrupciones() {
-
+bool revisarInterrupciones() {
+	srand(time(NULL));
+	int valor= rand() % 1000;
+	return valor < 500;
 }
 
 /*Dibuja las palabras del cicho*/

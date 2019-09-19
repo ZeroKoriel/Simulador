@@ -31,57 +31,15 @@
 #define IDPLANIFICADOR 1000
 #define MAXL 10000
 
-typedef enum Algoritmo
-{
-	AFcfs = 0,
-	ARoundR,
-	APrioridad,
-	tiempoReal	
-}Algoritmo;
+#include "DataTypes.h"
+#include "ArchivoBusiness.h"
 
-typedef enum palabraEstado
-{
-	bloqueado = 0,
-	listo,
-	ejecucion, 
-	terminado
-}palabraEstado;
-
-typedef struct processInfo
-{
-	int id;
-	int prioridad;
-	int quantum;
-	int contadorPrograma;
-	palabraEstado estado;
-	pthread_cond_t cond;
-	pthread_mutex_t mutex;
-}processInfo;
-
-typedef struct Process
-{
-	pthread_t hilo;	
-	processInfo* info;
-}Process;
-
-typedef struct shedInfo
-{
-	/*Colas para el planificador de procesos*/
-	Lista* cListo;
-	Lista* cBloqueado;
-	Process* enEjecucion;
-	processInfo* info;
-
-	Algoritmo algoritmoActual;
-	int cantidadDeProcesos;
-	pthread_t hilo;
-}shedInfo;
+static pthread_cond_t cPlanificador;
+static pthread_mutex_t mPlanificador;
 
 /*estructura con la info necesaria para el planificador*/
 shedInfo *prosessPlanificador;
 Process *process[CANTIDADHILOS];
-
-static bool cambiar;
 
 char* procesoEnEjecucion;
 char** listaListos;
@@ -105,7 +63,7 @@ void eliminarProceso(Process*);
 void balancearColas();
 void* runPlanificador(void*);
 void* runProceso(void*);
-void revisarInterrupciones();
+bool revisarInterrupciones();
 void drawCicle(cairo_t*);
 void drawProcess(cairo_t*); 
 void mostrarInformacion();
