@@ -18,26 +18,30 @@ void initPlanificador(){
 	prosessPlanificador->cantidadDeProcesos = 0;
 	prosessPlanificador->algoritmoActual = ARoundR;
 
+	prosessPlanificador->pPlanificador = calloc(1, sizeof(Process));
+	prosessPlanificador->pPlanificador->info = calloc(1, sizeof(processInfo));
+	prosessPlanificador->pPlanificador->info->id = -1;
+	prosessPlanificador->pPlanificador->info->prioridad = 10;
+	prosessPlanificador->pPlanificador->info->quantum = 100/10;
+	prosessPlanificador->pPlanificador->info->estado = bloqueado;
+	prosessPlanificador->pPlanificador->info->contadorPrograma = 0;
+
 	pthread_create(&(prosessPlanificador->hilo), NULL, (void*)runPlanificador, (void*)(prosessPlanificador));
 }
 
-/*Crea una cantidad de hilos en específico*/
-void initHilos() {
-	srand(time(NULL));
-	for (int i = 0; i < CANTIDADHILOS; ++i)
-	{
-		process[i] = calloc(1, sizeof(Process));
-		process[i]->info = calloc(1, sizeof(processInfo));
-		process[i]->info->id = prosessPlanificador->cantidadDeProcesos++;
-		process[i]->info->quantum = (rand() % 9) +1;
-		process[i]->info->prioridad = 100 / process[i]->info->quantum;
-		process[i]->info->estado = bloqueado;
-		process[i]->info->contadorPrograma = 0;
-		leerArchivo(process[i]->info);
-
-		pthread_create(&(process[i]->hilo), NULL, (void*)runProceso, (void*)(process[i]->info));
-		insertarFinal(prosessPlanificador->cBloqueado, (void*)process[i]);
-	}
+void crearProceso(int id, int prioridad, TipoProceso tipo) {
+	Process* p;
+	p = calloc(1, sizeof(Process));
+	p->info = calloc(1, sizeof(processInfo));
+	p->info->id = id;
+	p->info->prioridad = prioridad;
+	p->info->quantum = 100/prioridad;
+	p->info->estado = bloqueado;
+	p->info->tipo = tipo;
+	p->info->contadorPrograma = 0;
+	leerArchivo(p->info);
+	pthread_create(&(p->hilo), NULL, (void*)runProceso, (void*)(p->info));
+	insertarFinal(prosessPlanificador->cBloqueado, (void*)p);
 }
 
 /*Guarda al proceso en ejecución y le da la señal para que inicie*/
@@ -53,7 +57,7 @@ void ejecutar(Process* proceso) {
 
 /*Asigna un proceso a una cola dependiendo de su estado*/
 void cambioDeContexto(Process* proceso) {
-	if (proceso) {
+		if (proceso) {
 		switch (proceso->info->estado) {
 			case bloqueado:
 				insertarFinal(prosessPlanificador->cBloqueado, (void*)proceso);
@@ -88,6 +92,14 @@ void algoritmoFCFS() {
 			ejecutar(temp);
 			cambioDeContexto(temp);
 		}
+	} else {
+		if (prosessPlanificador->cBloqueado->cantidadNodos > 0) {
+			Process* temp = (Process*) obtener(prosessPlanificador->cListo, 0);
+			eliminarElemento(prosessPlanificador->cListo, 0);
+			if (temp) {
+				insertarFinal(prosessPlanificador->cListo, temp);
+			} 
+		}
 	}
 }
 
@@ -97,8 +109,17 @@ void algoritmoRoundRobin() {
 		eliminarElemento(prosessPlanificador->cListo, 0);
 		if (temp) {
 			temp->info->estado = ejecucion;
+			temp->info->quantum = 20;
 			ejecutar(temp);
 			cambioDeContexto(temp);
+		}
+	} else {
+		if (prosessPlanificador->cBloqueado->cantidadNodos > 0) {
+			Process* temp = (Process*) obtener(prosessPlanificador->cBloqueado, 0);
+			eliminarElemento(prosessPlanificador->cBloqueado, 0);
+			if (temp) {
+				insertarFinal(prosessPlanificador->cListo, temp);
+			} 
 		}
 	}
 }
@@ -112,6 +133,14 @@ void algoritmoPorPrioridad() {
 			ejecutar(temp);
 			cambioDeContexto(temp);
 		}
+	} else {
+		if (prosessPlanificador->cBloqueado->cantidadNodos > 0) {
+			Process* temp = (Process*) obtener(prosessPlanificador->cListo, 0);
+			eliminarElemento(prosessPlanificador->cListo, 0);
+			if (temp) {
+				insertarFinal(prosessPlanificador->cListo, temp);
+			} 
+		}
 	}
 }
 
@@ -123,6 +152,14 @@ void algoritmoTR_RMS() {
 			temp->info->estado = ejecucion;
 			ejecutar(temp);
 			cambioDeContexto(temp);
+		}
+	} else {
+		if (prosessPlanificador->cBloqueado->cantidadNodos > 0) {
+			Process* temp = (Process*) obtener(prosessPlanificador->cListo, 0);
+			eliminarElemento(prosessPlanificador->cListo, 0);
+			if (temp) {
+				insertarFinal(prosessPlanificador->cListo, temp);
+			} 
 		}
 	}	
 }
@@ -226,10 +263,6 @@ void* runPlanificador(void* args) {
 * a bloqueado y encolar un nuevo proceso a listo.
 */
 void shedTask() {
-	if (prosessPlanificador->cBloqueado->cantidadNodos < 15) {
-		initHilos();
-	}
-
 	switch(prosessPlanificador->algoritmoActual) {
 		case AFcfs:
 			goto fcfs;
@@ -246,20 +279,14 @@ void shedTask() {
 			break;
 	}
 	fcfs:
-		if (prosessPlanificador->cListo->cantidadNodos < 15) {
-			insertarFinal(prosessPlanificador->cListo, (Process*)obtener(prosessPlanificador->cBloqueado, 0));
-			eliminarElemento(prosessPlanificador->cBloqueado, 0);
-
+		if (prosessPlanificador->cBloqueado->cantidadNodos > 0) {
 			insertarFinal(prosessPlanificador->cListo, (Process*)obtener(prosessPlanificador->cBloqueado, 0));
 			eliminarElemento(prosessPlanificador->cBloqueado, 0);
 		}
 	return;
 
 	robin:
-		if (prosessPlanificador->cListo->cantidadNodos < 15) {
-			insertarFinal(prosessPlanificador->cListo, (Process*)obtener(prosessPlanificador->cBloqueado, 0));
-			eliminarElemento(prosessPlanificador->cBloqueado, 0);
-
+		if (prosessPlanificador->cBloqueado->cantidadNodos > 0) {
 			insertarFinal(prosessPlanificador->cListo, (Process*)obtener(prosessPlanificador->cBloqueado, 0));
 			eliminarElemento(prosessPlanificador->cBloqueado, 0);
 		}
@@ -267,10 +294,7 @@ void shedTask() {
 
 	alPrioridad:
 		ordenarPorPrioridad();
-		if (prosessPlanificador->cListo->cantidadNodos < 15) {
-			insertarFinal(prosessPlanificador->cListo, (Process*)obtener(prosessPlanificador->cBloqueado, 0));
-			eliminarElemento(prosessPlanificador->cBloqueado, 0);
-
+		if (prosessPlanificador->cBloqueado->cantidadNodos > 0) {
 			insertarFinal(prosessPlanificador->cListo, (Process*)obtener(prosessPlanificador->cBloqueado, 0));
 			eliminarElemento(prosessPlanificador->cBloqueado, 0);
 		}
@@ -286,8 +310,9 @@ void* runProceso(void* args) {
 	pthread_mutex_lock(&(info->mutex));
 	pthread_cond_wait(&(info->cond), &(info->mutex));
 	
-	int valor;
-	while (info->contadorPrograma < MAXL) {
+	while (info->contadorPrograma < info->cantidadDeLineas) {
+		ejecutarInstruccion(info);
+		
 		if (revisarInterrupciones()) {
 			info->estado = bloqueado;
 			pthread_cond_signal(&cPlanificador);
@@ -302,7 +327,6 @@ void* runProceso(void* args) {
 				pthread_cond_wait(&(info->cond), &(info->mutex));
 			}
 		}
-		++info->contadorPrograma;
 		usleep(100);
 	}
 	pthread_mutex_unlock(&(info->mutex));
@@ -343,7 +367,7 @@ void drawProcess(cairo_t* cr) {
 	/*Muestra al proceso en ejecución*/
 	cairo_move_to(cr, 350, 100);
 	cairo_show_text(cr, procesoEnEjecucion);
-
+	//procesoEnEjecucion = " ";
 	/*Muestra los procesos en bloqueado*/
 	pos = 275;
 	for (i = 0; i < 10; ++i)
@@ -360,6 +384,12 @@ void drawProcess(cairo_t* cr) {
 		cairo_move_to(cr, 650, pos);
 	    cairo_show_text(cr, listaListos[i]);
 		pos += 20;
+	}
+
+	for (int i = 0; i < 10; ++i)
+	{
+		listaBloqueados[i] = " ";
+		listaListos[i] = " ";
 	}
 
 	cairo_set_source_rgb(cr,0.2,1,0);
@@ -380,29 +410,33 @@ void mostrarInformacion() {
 	int i; 
 	char p[20];
 	Process* temp;
-	if (prosessPlanificador->enEjecucion->info) {
+	int cantidadListo = prosessPlanificador->cListo->cantidadNodos;
+	int cantidadBloqueado = prosessPlanificador->cBloqueado->cantidadNodos;
+	if (prosessPlanificador->enEjecucion != NULL && prosessPlanificador->enEjecucion->info) {
+		assert(prosessPlanificador->enEjecucion != NULL);
 		sprintf(p, "Proceso %d", prosessPlanificador->enEjecucion->info->id);
 		procesoEnEjecucion = strdup(p);
 	}
-	for (i = 0; i < prosessPlanificador->cListo->cantidadNodos; ++i)
+	for (i = 0; i < cantidadListo; ++i)
 	{
 		temp = (Process*) obtener(prosessPlanificador->cListo, i);
-		if (temp->info) {
-			if (i < 10) {			
+		if (temp) {
+			if (i < 10) {	
 			sprintf(p,"Proceso %d p: %d", temp->info->id, temp->info->prioridad);
 			listaListos[i] = strdup(p);
 			}
 		}
 	}
 
-	for (i = 0; i < prosessPlanificador->cBloqueado->cantidadNodos; ++i)
+	for (i = 0; i < cantidadBloqueado; ++i)
 	{
 		temp = (Process*) obtener(prosessPlanificador->cBloqueado, i);
-		if (temp->info) {
+		if (temp) {
 			if (i < 10) {
 			sprintf(p,"Proceso %d p: %d", temp->info->id, temp->info->prioridad);	
 			listaBloqueados[i] = strdup(p);
 			}
 		}
 	}
+	/**/
 }

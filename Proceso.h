@@ -12,7 +12,10 @@
 #include <glib/gmacros.h>
 #include <cairo.h>
 
+#include "Interprete.h"
 #include "ADT/Lista.h"
+#include "DataTypes.h"
+#include "ArchivoBusiness.h"
 
 /*
 *     Variables de la estructura processInfo
@@ -30,9 +33,6 @@
 #define CANTIDADHILOS 5
 #define IDPLANIFICADOR 1000
 #define MAXL 10000
-
-#include "DataTypes.h"
-#include "ArchivoBusiness.h"
 
 static pthread_cond_t cPlanificador;
 static pthread_mutex_t mPlanificador;
@@ -59,6 +59,7 @@ bool esPlanificableRMS();
 void ordenarPorPrioridad();
 void shedTask();
 
+void crearProceso(int, int, TipoProceso);
 void eliminarProceso(Process*);
 void balancearColas();
 void* runPlanificador(void*);

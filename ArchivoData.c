@@ -3,7 +3,7 @@
 void leer(processInfo* p) {
 	FILE *f;
    char c;
-   char temp[50];
+   char temp[1024];
    int lineas = 0;
    if ((f = fopen("asm.txt", "r")) == NULL){
    	perror("asm.txt");
@@ -22,7 +22,7 @@ void leer(processInfo* p) {
 
    for (int i = 0; i < lineas; ++i)
    {
-   	fscanf(f, "%s", temp);
+   	fgets(temp, 1024, f);
    	p->archivoInstrucciones[i] = strdup(temp);
    }
    fclose(f);

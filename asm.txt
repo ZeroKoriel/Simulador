@@ -1,1 +1,32 @@
+GOTO comenzar
 
+comenzar
+CLRF PORTB
+CLRF PORTA
+BSF STATUS,5
+MOVLW b'00000010'
+MOVWF TRISB 
+MOVLW b'00010000'
+MOVWF TRISA 
+BCF STATUS,5 
+
+encendido
+BSF PORTB,1 
+BTFSC PORTA,4 
+	;$ se queda ahí mismo
+	;$+1 se va 1 posición adelante , si pones $+5 se va 5 lineas adelante.
+	;$-1 se va 1 posición atras
+GOTO $-1
+BTFSS PORTA,4 
+GOTO $-1
+GOTO apagado
+
+apagado
+BCF PORTB,1 
+BTFSC PORTA,4 
+GOTO $-1 
+BTFSS PORTA,4 
+GOTO $-1 
+GOTO encendido
+
+END

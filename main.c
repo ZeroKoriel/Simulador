@@ -1,4 +1,6 @@
 #include <gtk/gtk.h>
+#include <stdlib.h>
+#include <time.h>
 
 #include "Proceso.h"
 
@@ -10,7 +12,12 @@ static gint64 last_tick = 0;
 static guint tick_cb = 0;
 static guint sizeL =32;
 
+int prioridad;
+TipoProceso tipoP;
+
+GtkWidget *window;
 GtkWidget *drawing;
+GtkWidget *entryID;
 
 static gboolean on_tick (gpointer user_data) {
     gint64 current = g_get_real_time ();
@@ -26,7 +33,33 @@ static gboolean on_tick (gpointer user_data) {
     return G_SOURCE_CONTINUE;
 }
 
-static void on_changed (GtkComboBox *widget, gpointer   user_data)
+static void on_changedAlgoritmos (GtkComboBox *widget, gpointer   user_data)
+{
+  GtkComboBox *combo_box = widget;
+
+  int opcion;
+  opcion = gtk_combo_box_get_active(GTK_COMBO_BOX(combo_box));
+  switch(opcion) {
+    case 0:
+      prosessPlanificador->algoritmoActual = ARoundR;
+      printf("%s\n", "Cambia a Round Robin");
+      break;
+    case 1:
+      prosessPlanificador->algoritmoActual = AFcfs;
+      printf("%s\n", "Cambia a FCFS");
+      break;
+    case 2:
+      prosessPlanificador->algoritmoActual = APrioridad;
+      printf("%s\n", "Cambia a planificación por prioridad");
+      break;
+    case 3:
+      prosessPlanificador->algoritmoActual = tiempoReal;
+      printf("%s\n", "Cambia a algoritmo de planificación de tiempo real");
+      break;
+    }
+}
+
+static void on_changedPrioridad (GtkComboBox *widget, gpointer   user_data)
 {
   GtkComboBox *combo_box = widget;
 
@@ -34,26 +67,124 @@ static void on_changed (GtkComboBox *widget, gpointer   user_data)
   opcion = gtk_combo_box_get_active(GTK_COMBO_BOX(combo_box));
   switch(opcion) {
     case 1://rr
-      prosessPlanificador->algoritmoActual = ARoundR;
-      printf("%s\n", "Cambia a Round Robin");
+     prioridad = 1;
+      printf("%s\n", "Cambia a 1");
       break;
     case 2: //fcfs
-      prosessPlanificador->algoritmoActual = AFcfs;
-      printf("%s\n", "Cambia a FCFS");
+      prioridad = 2;
+      printf("%s\n", "Cambia a 2");
       break;
     case 3://a prioridad
-      prosessPlanificador->algoritmoActual = APrioridad;
-      printf("%s\n", "Cambia a planificación por prioridad");
+       prioridad = 3;
+      printf("%s\n", "Cambia a 3");
       break;
-    case 4:
-      prosessPlanificador->algoritmoActual = tiempoReal;
-      printf("%s\n", "Cambia a planificación por tiempo real");
+    case 4://rr
+     prioridad = 4;
+      printf("%s\n", "Cambia a 4");
+      break;
+    case 5://rr
+     prioridad = 5;
+      printf("%s\n", "Cambia a 5");
+      break;
+    case 6://rr
+     prioridad = 6;
+      printf("%s\n", "Cambia a 6");
+      break;
+    case 7://rr
+     prioridad = 7;
+      printf("%s\n", "Cambia a 7");
+      break;
+    case 8://rr
+     prioridad = 8;
+      printf("%s\n", "Cambia a 8");
+      break;
+    case 9://rr
+     prioridad = 9;
+      printf("%s\n", "Cambia a 9");
+      break;
+    case 10://rr
+     prioridad = 10;
+      printf("%s\n", "Cambia a 10");
       break;
     default:
       printf("%s\n", "Opción no soportada por el combobox");
       break;
     }
 }
+
+static void on_changedTipo (GtkComboBox *widget, gpointer   user_data)
+{
+  GtkComboBox *combo_box = widget;
+
+  int opcion;
+  opcion = gtk_combo_box_get_active(GTK_COMBO_BOX(combo_box));
+  switch(opcion) {
+    case 1:
+      tipoP = lotes;
+      printf("%s\n", "Cambia a Lotes");
+      break;
+    case 2: 
+      tipoP = tReal;
+      printf("%s\n", "Cambia a Tiempo Real");
+      break;
+    case 3:
+      tipoP = interactivo;
+      printf("%s\n", "Cambia a Iterativo");
+      break;
+    default:
+      printf("%s\n", "Opción no soportada por el combobox");
+      break;
+  }
+}
+
+static void bCrearAleatorio (GtkWidget *widget, gpointer   user_data)
+{
+  int tipo = 0;
+  int prioridad = 0;
+  int id = 0;
+
+  TipoProceso tipoTemp;
+  srand(time(NULL));
+
+  for (int i = 0; i < 10; ++i)
+  {
+    tipo = rand() % 3;
+    prioridad = 1 + rand() % 9;
+    id = rand() %1000;
+    switch (tipo) {
+      case 0://lotes
+        crearProceso(id, prioridad, lotes);
+        break;
+      case 1://t real
+        crearProceso(id, prioridad, tReal);
+        break;
+      case 2: //interactivo
+        crearProceso(id, prioridad, interactivo);
+        break;
+    }
+  }
+}
+
+static void bCrear (GtkWidget *widget, gpointer   user_data)
+{
+  //const gchar *gtk_entry_get_text( GtkEntry *entry );
+  GtkWidget* wdg = gtk_file_chooser_dialog_new("Open file", NULL, GTK_FILE_CHOOSER_ACTION_OPEN, 
+    "Cancel", GTK_RESPONSE_CANCEL, "Open", GTK_RESPONSE_OK, NULL);
+
+  if (gtk_dialog_run(GTK_DIALOG(wdg)) == GTK_RESPONSE_OK) {
+    char *filename;
+    GtkFileChooser *chooser = GTK_FILE_CHOOSER (wdg);
+    filename = gtk_file_chooser_get_filename (chooser);
+    printf("%s\n", filename);
+  }
+  gtk_widget_destroy (wdg);
+
+  const gchar *tID = gtk_entry_get_text((GtkEntry *)entryID);
+  int id = atoi(tID);
+  gtk_entry_set_text((GtkEntry *)entryID, " ");
+  crearProceso(id, prioridad, tipoP);
+}
+
 
 static void on_draw (GtkWidget *widget, cairo_t *cr, gpointer user_data) {
   drawCicle(cr);
@@ -63,11 +194,11 @@ static void on_draw (GtkWidget *widget, cairo_t *cr, gpointer user_data) {
 static void activate (GtkApplication *app, gpointer user_data)
 {
   initPlanificador();
-
   gint i;
   GtkWidget *fixed;
-  GtkWidget *window;
-  GtkWidget *combo_box;  
+  GtkWidget *combo_box;
+  GtkWidget *combo_boxPrioridad; 
+  GtkWidget *combo_boxTipo;   
 
   window = gtk_application_window_new (app);
   gtk_window_set_title (GTK_WINDOW (window), "Simulación");
@@ -84,33 +215,80 @@ static void activate (GtkApplication *app, gpointer user_data)
   
   /* Create the combo box and append your string values to it. */
   combo_box = gtk_combo_box_text_new ();
-  const char *algoritmos[] = {"Seleccione un algoritmo", "Round Robin", "FCFS", "P. Prioridad", "Tiempo real"};
-
- 
-  /* G_N_ELEMENTS is a macro which determines the number of elements in an array.*/ 
+  const char *algoritmos[] = {"Round Robin", "FCFS", "Prioridad", "Tiempo R"};
   for (i = 0; i < G_N_ELEMENTS (algoritmos); i++){
     gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT (combo_box), algoritmos[i]);
   }
-
-  /* Choose to set the first row as the active one by default, from the beginning */
   gtk_combo_box_set_active (GTK_COMBO_BOX (combo_box), 0);
+  g_signal_connect (combo_box, "changed", G_CALLBACK (on_changedAlgoritmos), NULL);
+  gtk_fixed_put(GTK_FIXED(fixed), combo_box, 400, 150);
+  gtk_widget_set_size_request(combo_box, 80, 30);
 
-  /* Connect the signal emitted when a row is selected to the appropriate
-   * callback function.
-   */
-  g_signal_connect (combo_box, "changed", G_CALLBACK (on_changed), NULL);
+  GtkWidget *labelAlgoritmo;
+  labelAlgoritmo = gtk_label_new("Algoritmo");
+  gtk_fixed_put(GTK_FIXED(fixed), labelAlgoritmo, 300, 150);
+  gtk_widget_set_size_request(labelAlgoritmo, 75, 30);
 
-  gtk_fixed_put(GTK_FIXED(fixed), combo_box, 300, 450);
-  gtk_widget_set_size_request(combo_box, 80, 30); 
+  combo_boxPrioridad = gtk_combo_box_text_new ();
+  const char *prioridad[] = {"Seleccione una prioridad", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"};
+  for (i = 0; i < G_N_ELEMENTS (prioridad); i++){
+    gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT (combo_boxPrioridad), prioridad[i]);
+  }
+  gtk_combo_box_set_active (GTK_COMBO_BOX (combo_boxPrioridad), 0);
+  g_signal_connect (combo_boxPrioridad, "changed", G_CALLBACK (on_changedPrioridad), NULL);
+  gtk_fixed_put(GTK_FIXED(fixed), combo_boxPrioridad, 400, 200);
+  gtk_widget_set_size_request(combo_boxPrioridad, 80, 30);
+
+  GtkWidget *labelPrioridad;
+  labelPrioridad = gtk_label_new("Prioridad");
+  gtk_fixed_put(GTK_FIXED(fixed), labelPrioridad, 300, 200);
+  gtk_widget_set_size_request(labelPrioridad, 75, 30);
+
+  combo_boxTipo = gtk_combo_box_text_new ();
+  const char *tipo[] = {"Lotes", "Tiempo Real", "Iterativo"};
+  for (i = 0; i < G_N_ELEMENTS (tipo); i++){
+    gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT (combo_boxTipo), tipo[i]);
+  }
+  gtk_combo_box_set_active (GTK_COMBO_BOX (combo_boxTipo), 0);
+  g_signal_connect (combo_boxTipo, "changed", G_CALLBACK (on_changedTipo), NULL);
+  gtk_fixed_put(GTK_FIXED(fixed), combo_boxTipo, 400, 250);
+  gtk_widget_set_size_request(combo_boxTipo, 80, 30);
+
+  GtkWidget *labelTipo;
+  labelTipo = gtk_label_new("Tipo");
+  gtk_fixed_put(GTK_FIXED(fixed), labelTipo, 300, 250);
+  gtk_widget_set_size_request(labelTipo, 75, 30);
+
+  GtkWidget *labelID;
+  labelID = gtk_label_new("ID");
+  gtk_fixed_put(GTK_FIXED(fixed), labelID, 300, 300);
+  gtk_widget_set_size_request(labelID, 75, 30);
+
+  
+  entryID = gtk_entry_new();
+  gtk_fixed_put(GTK_FIXED(fixed), entryID, 400, 300);
+  gtk_widget_set_size_request(entryID, 75, 30);  
+
+  GtkWidget *bottonCrearAleatorio;
+  bottonCrearAleatorio = gtk_button_new_with_label("Aleatorio");
+  g_signal_connect(bottonCrearAleatorio, "clicked", G_CALLBACK(bCrearAleatorio), NULL);
+  gtk_widget_set_size_request(bottonCrearAleatorio, 75, 30);
+  gtk_fixed_put(GTK_FIXED(fixed), bottonCrearAleatorio, 250, 400);
+
+  GtkWidget *bottonCrear;
+  bottonCrear = gtk_button_new_with_label("Crear Proceso");
+  g_signal_connect(bottonCrear, "clicked", G_CALLBACK(bCrear), NULL);
+  gtk_widget_set_size_request(bottonCrear, 75, 30);
+  gtk_fixed_put(GTK_FIXED(fixed), bottonCrear, 450, 400);
 
   gtk_widget_show_all (window);
-
-  tick_cb = g_timeout_add(10000 / FPS / 2, (GSourceFunc) on_tick, GINT_TO_POINTER(sizeL)); 
+  tick_cb = g_timeout_add(150, (GSourceFunc) on_tick, GINT_TO_POINTER(sizeL));   
 }
 
 
 int main (int argc, char **argv)
 {
+  prioridad = 0;
   GtkApplication *app;
   int status;
 
@@ -118,6 +296,7 @@ int main (int argc, char **argv)
   g_signal_connect (app, "activate", G_CALLBACK (activate), NULL);
   status = g_application_run (G_APPLICATION (app), argc, argv);
   g_object_unref (app);
+
 
   return status;
 }

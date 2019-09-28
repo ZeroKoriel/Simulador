@@ -1,41 +1,44 @@
 #ifndef INTERPRETE_H
 #define INTERPRETE_H
 
+#include <math.h>
 #include <string.h>
+#include <assert.h>
+#include "DataTypes.h"
 
-/*Monádicas*/
-#define CLRF "CLRF"
-#define CLRW "CLRW"
-#define MOVWF "MOVWF"
-#define ADDLW "ADDLW"
-#define ANDLW "ANDLW"
-#define GOTO "GOTO"
-#define IORLW "IORLW"
-#define SUBLW "SUBLW"
+void ejecutarInstruccion(processInfo*);
 
-/*Diádicas*/
-#define ADDWF "ADDWF"
-#define ANDWF "ANDWF"
-#define MOVF "MOVF"
-#define SUBWF "SUBWF"
-#define BCF "BCF"
-#define BSF "BSF"
-#define CALL "CALL"
-#define RETURN "RETURN"
-#define END "END"
+void buscarLinea(processInfo*, char*);
+void comprobarNemotecnico(processInfo*, char*, char*);
 
-/*
-	int strcmp(const char *str1, const char *str2)
+/*funciones de apoyo*/
+void limpiarRegistro(int*);
+void copiarRegistro(int*, int*);
+void andRegistros(int*, int*);
+void andFRegistros(int*, int*);
+void orRegistros(int*, int*);
+void sumarRegistros(int*, int*, int*);
+void restarRegistros(int*, int*);
+void restarFRegistros(int*, int*, int*);
 
-	si el valor de retorno <0 indica que str1 es menor que str2.
-
-	si Valor devuelto> 0, indica que str2 es menor que str1.
-
-	si Valor devuelto = 0, entonces indica que str1 es igual a str2. 
-*/
-
-/*
-	char* ptr = strtok(char* str, char* delim);
-*/
+/*funciones de los nemónicos*/
+void mCLRF(processInfo*, char*);
+void mCLRW(processInfo*);
+void mMOVWF(processInfo*, char*);
+void mADDLW(processInfo*, char*);
+void mANDLW(processInfo*, char*);
+void mGOTO(processInfo*, char*);
+void mIORLW(processInfo*, char*);
+void mSUBLW(processInfo*, char*);
+void mADDWF(processInfo*, char*);
+void mANDWF(processInfo*, char*);
+void mMOVF(processInfo*, char*);
+void mSUBWF(processInfo*, char*);
+void mBCF(processInfo*, char*);
+void mBSF(processInfo*, char*);
+void mCALL(processInfo*, char*);
+void mRETURN(processInfo*, char*);
+void mBTFSC(processInfo*, char*);
+void mMOVLW(processInfo*, char*);
 
 #endif

@@ -3,7 +3,18 @@
 
 #include <string.h>
 #include <pthread.h>
+#include <stdbool.h>
+
 #include "ADT/Lista.h"
+
+#define BITS 32
+
+typedef enum Tipo
+{
+	interactivo = 0,
+	lotes,
+	tReal
+}TipoProceso;
 
 typedef enum Algoritmo
 {
@@ -28,12 +39,19 @@ typedef struct processInfo
 	int quantum;
 	int contadorPrograma;
 	int cantidadDeLineas;
+	TipoProceso tipo;
 
-	int TRISA[32];
-	int PORTB[32];
-	int STATUS[32];
-	int PORTA[32];
+	int PORTA[BITS];
+	int PORTB[BITS];
 
+	int TRISA[BITS];
+	int TRISB[BITS];
+	
+	int STATUS[BITS];
+	
+	int f[BITS];
+	int w[BITS];
+	
 	char** archivoInstrucciones;
 
 	palabraEstado estado;
@@ -53,6 +71,7 @@ typedef struct shedInfo
 	Lista* cListo;
 	Lista* cBloqueado;
 	Process* enEjecucion;
+	Process* pPlanificador;
 	processInfo* info;
 
 	Algoritmo algoritmoActual;
