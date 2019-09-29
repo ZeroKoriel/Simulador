@@ -1,5 +1,5 @@
 #include "ArchivoBusiness.h"
 
-void leerArchivo(processInfo* p) {
-	leer(p);
+void leerArchivo(processInfo* p, char* ruta) {
+	leer(p, ruta);
 }

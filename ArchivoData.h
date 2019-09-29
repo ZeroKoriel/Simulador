@@ -6,6 +6,6 @@
 
 #include "DataTypes.h"
 
-void leer(processInfo*);
+void leer(processInfo*, char*);
 
 #endif

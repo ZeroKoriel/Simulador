@@ -21,7 +21,8 @@ typedef enum Algoritmo
 	AFcfs = 0,
 	ARoundR,
 	APrioridad,
-	tiempoReal	
+	tiempoReal, 
+	sfj	
 }Algoritmo;
 
 typedef enum palabraEstado

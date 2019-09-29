@@ -54,7 +54,11 @@ static void on_changedAlgoritmos (GtkComboBox *widget, gpointer   user_data)
       break;
     case 3:
       prosessPlanificador->algoritmoActual = tiempoReal;
-      printf("%s\n", "Cambia a algoritmo de planificación de tiempo real");
+      printf("%s\n", "Cambia a planificación de tiempo real");
+      break;
+    case 4:
+      prosessPlanificador->algoritmoActual = sfj;
+      printf("%s\n", "Cambia a SFJ");
       break;
     }
 }
@@ -153,13 +157,13 @@ static void bCrearAleatorio (GtkWidget *widget, gpointer   user_data)
     id = rand() %1000;
     switch (tipo) {
       case 0://lotes
-        crearProceso(id, prioridad, lotes);
+        crearProceso(id, prioridad, lotes, "asm.txt");
         break;
       case 1://t real
-        crearProceso(id, prioridad, tReal);
+        crearProceso(id, prioridad, tReal, "asm.txt");
         break;
       case 2: //interactivo
-        crearProceso(id, prioridad, interactivo);
+        crearProceso(id, prioridad, interactivo, "asm.txt");
         break;
     }
   }
@@ -170,9 +174,9 @@ static void bCrear (GtkWidget *widget, gpointer   user_data)
   //const gchar *gtk_entry_get_text( GtkEntry *entry );
   GtkWidget* wdg = gtk_file_chooser_dialog_new("Open file", NULL, GTK_FILE_CHOOSER_ACTION_OPEN, 
     "Cancel", GTK_RESPONSE_CANCEL, "Open", GTK_RESPONSE_OK, NULL);
-
+  char *filename;
   if (gtk_dialog_run(GTK_DIALOG(wdg)) == GTK_RESPONSE_OK) {
-    char *filename;
+    
     GtkFileChooser *chooser = GTK_FILE_CHOOSER (wdg);
     filename = gtk_file_chooser_get_filename (chooser);
     printf("%s\n", filename);
@@ -182,7 +186,7 @@ static void bCrear (GtkWidget *widget, gpointer   user_data)
   const gchar *tID = gtk_entry_get_text((GtkEntry *)entryID);
   int id = atoi(tID);
   gtk_entry_set_text((GtkEntry *)entryID, " ");
-  crearProceso(id, prioridad, tipoP);
+  crearProceso(id, prioridad, tipoP, filename);
 }
 
 
@@ -215,7 +219,7 @@ static void activate (GtkApplication *app, gpointer user_data)
   
   /* Create the combo box and append your string values to it. */
   combo_box = gtk_combo_box_text_new ();
-  const char *algoritmos[] = {"Round Robin", "FCFS", "Prioridad", "Tiempo R"};
+  const char *algoritmos[] = {"Round Robin", "FCFS", "Prioridad", "Tiempo R", "SFJ"};
   for (i = 0; i < G_N_ELEMENTS (algoritmos); i++){
     gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT (combo_box), algoritmos[i]);
   }

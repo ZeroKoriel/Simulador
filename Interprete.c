@@ -591,7 +591,7 @@ void restarRegistros(int* a, int* b) {
 	for (int i = 0; i < BITS; ++i)
 	{
 		if (a[i] - b[i] < 0) {
-			/*busca un un 1*/
+			/*busca un 1*/
 			j = i;
 			while (a[j] != 1) {
 				j++;

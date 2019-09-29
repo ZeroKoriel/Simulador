@@ -54,12 +54,14 @@ void algoritmoFCFS();
 void algoritmoRoundRobin();
 void algoritmoPorPrioridad();
 void algoritmoTR_RMS();
+void algoritmoSJF();
 
 bool esPlanificableRMS();
 void ordenarPorPrioridad();
+void ordenarPorTamanio();
 void shedTask();
 
-void crearProceso(int, int, TipoProceso);
+void crearProceso(int, int, TipoProceso, char*);
 void eliminarProceso(Process*);
 void balancearColas();
 void* runPlanificador(void*);

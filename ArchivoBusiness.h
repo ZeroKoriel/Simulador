@@ -3,6 +3,6 @@
 
 #include "DataTypes.h"
 #include "ArchivoData.h"
-void leerArchivo(processInfo*);
+void leerArchivo(processInfo*, char*);
 
 #endif

@@ -1,6 +1,5 @@
 #include "Proceso.h"
 
-
 void initPlanificador(){
 	/*Inicializa las variables para mostrar la información de los hilos*/
 	procesoEnEjecucion = calloc(1, sizeof(char));
@@ -29,7 +28,7 @@ void initPlanificador(){
 	pthread_create(&(prosessPlanificador->hilo), NULL, (void*)runPlanificador, (void*)(prosessPlanificador));
 }
 
-void crearProceso(int id, int prioridad, TipoProceso tipo) {
+void crearProceso(int id, int prioridad, TipoProceso tipo, char* file) {
 	Process* p;
 	p = calloc(1, sizeof(Process));
 	p->info = calloc(1, sizeof(processInfo));
@@ -39,7 +38,7 @@ void crearProceso(int id, int prioridad, TipoProceso tipo) {
 	p->info->estado = bloqueado;
 	p->info->tipo = tipo;
 	p->info->contadorPrograma = 0;
-	leerArchivo(p->info);
+	leerArchivo(p->info, file);
 	pthread_create(&(p->hilo), NULL, (void*)runProceso, (void*)(p->info));
 	insertarFinal(prosessPlanificador->cBloqueado, (void*)p);
 }
@@ -103,6 +102,27 @@ void algoritmoFCFS() {
 	}
 }
 
+void algoritmoSJF() {
+	if (prosessPlanificador->cListo->cantidadNodos > 0) {
+		Process* temp = (Process*) obtener(prosessPlanificador->cListo, 0);
+		eliminarElemento(prosessPlanificador->cListo, 0);
+		if (temp) {
+			temp->info->estado = ejecucion;
+			ejecutar(temp);
+			cambioDeContexto(temp);
+		}
+	} else {
+		if (prosessPlanificador->cBloqueado->cantidadNodos > 0) {
+			Process* temp = (Process*) obtener(prosessPlanificador->cListo, 0);
+			eliminarElemento(prosessPlanificador->cListo, 0);
+			if (temp) {
+				insertarFinal(prosessPlanificador->cListo, temp);
+				ordenarPorTamanio();
+			} 
+		}
+	}
+}
+
 void algoritmoRoundRobin() {
 	if (prosessPlanificador->cListo->cantidadNodos > 0) {
 		Process* temp = (Process*) obtener(prosessPlanificador->cListo, 0);
@@ -139,6 +159,7 @@ void algoritmoPorPrioridad() {
 			eliminarElemento(prosessPlanificador->cListo, 0);
 			if (temp) {
 				insertarFinal(prosessPlanificador->cListo, temp);
+				ordenarPorPrioridad();
 			} 
 		}
 	}
@@ -159,6 +180,7 @@ void algoritmoTR_RMS() {
 			eliminarElemento(prosessPlanificador->cListo, 0);
 			if (temp) {
 				insertarFinal(prosessPlanificador->cListo, temp);
+				ordenarPorPrioridad();
 			} 
 		}
 	}	
@@ -177,35 +199,79 @@ bool esPlanificableRMS() {
 	return suma < 1;
 }
 
-void ordenarPorPrioridad() {
-	Process *respaldo[prosessPlanificador->cListo->cantidadNodos];
-	Process *temp;
-	int cantidad = prosessPlanificador->cListo->cantidadNodos;
-	int i;
-	int j;
-	for (i = 0; i < cantidad; ++i)
+void ordenarPorTamanio() {
+	int size = prosessPlanificador->cListo->cantidadNodos;
+	Process *vector[size];
+
+	for (int i = 0; i < size; ++i)
 	{
-		respaldo[i] = obtener(prosessPlanificador->cListo, 0);
+		vector[i] = obtener(prosessPlanificador->cListo, 0);
 		eliminarElemento(prosessPlanificador->cListo, 0);
 	}
-	
+
 	destruirLista(prosessPlanificador->cListo);
 
-	for (i = 0; i < cantidad; ++i)
+	for (int step = 0; step < size - 1; ++step)
+  	{
+    	int swapped = 0;
+    	for (int i = 0; i < size - step - 1; ++i)
+    	{
+      		// To sort in descending order, change > to < in this line.
+      		if (vector[i]->info->prioridad > vector[i + 1]->info->prioridad)
+      		{
+        		Process* temp = vector[i];
+        		vector[i] = vector[i + 1];
+        		vector[i + 1] = temp;
+        		swapped = 1;
+      		}
+    	}
+    	// If there is not swapping in the last swap, then the array is already sorted.
+    	if (swapped == 0) {
+     		break;
+    	}
+  	}
+
+  	for (int i = 0; i < size; ++i)
+  	{
+  		insertarFinal(prosessPlanificador->cListo, vector[i]);
+  	}
+}
+
+void ordenarPorPrioridad() {
+	int size = prosessPlanificador->cListo->cantidadNodos;
+	Process *vector[size];
+
+	for (int i = 0; i < size; ++i)
 	{
-		for (j = 0; j < cantidad; ++j)
-		{
-			if(respaldo[i]->info->prioridad > respaldo[j]->info->prioridad) {
-				temp = respaldo[i];
-				respaldo[i] = respaldo[j];
-				respaldo[j] = temp;
-			}
-		}
+		vector[i] = obtener(prosessPlanificador->cListo, 0);
+		eliminarElemento(prosessPlanificador->cListo, 0);
 	}
-	for (i = 0; i < cantidad; ++i)
-	{
-		insertarFinal(prosessPlanificador->cListo, (void*)respaldo[i]);
-	}
+
+	destruirLista(prosessPlanificador->cListo);
+
+	for (int step = 0; step < size - 1; ++step)
+  	{
+    	int swapped = 0;
+    	for (int i = 0; i < size - step - 1; ++i)
+    	{
+      		if (vector[i]->info->prioridad < vector[i + 1]->info->prioridad)
+      		{
+        		Process* temp = vector[i];
+        		vector[i] = vector[i + 1];
+        		vector[i + 1] = temp;
+        		swapped = 1;
+      		}
+    	}
+    	if (swapped == 0) {
+     		break;
+    	}
+  	}
+
+  	for (int i = 0; i < size; ++i)
+  	{
+  		insertarFinal(prosessPlanificador->cListo, vector[i]);
+  	}
+  	
 }
 
 /*
@@ -235,7 +301,7 @@ void balancearColas() {
 /*Método que ejecuta el hilo planificador*/
 void* runPlanificador(void* args) {
 	while (true) {
-		usleep(100000);
+		(50000);
 		shedTask();
 		switch(prosessPlanificador->algoritmoActual) {
 			case AFcfs:
@@ -250,11 +316,13 @@ void* runPlanificador(void* args) {
 			case tiempoReal:
 				algoritmoTR_RMS();
 				break;
+			case sfj:
+				algoritmoSJF();
+				break;
 			default:
 				printf("%s\n", "Opción no soportada");
 		}
-		usleep(100000);	
-		mostrarInformacion();
+		usleep(50000);	
 	}
 }
 
@@ -264,11 +332,14 @@ void* runPlanificador(void* args) {
 */
 void shedTask() {
 	switch(prosessPlanificador->algoritmoActual) {
+		case sfj:
+			goto corto;
+			break;
 		case AFcfs:
-			goto fcfs;
+			goto normal;
 			break;
 		case ARoundR:
-			goto robin;
+			goto normal;
 			break;
 		case APrioridad:
 			goto alPrioridad;
@@ -278,14 +349,16 @@ void shedTask() {
 		default:
 			break;
 	}
-	fcfs:
+
+	corto:
 		if (prosessPlanificador->cBloqueado->cantidadNodos > 0) {
 			insertarFinal(prosessPlanificador->cListo, (Process*)obtener(prosessPlanificador->cBloqueado, 0));
+			ordenarPorTamanio();
 			eliminarElemento(prosessPlanificador->cBloqueado, 0);
 		}
 	return;
 
-	robin:
+	normal:
 		if (prosessPlanificador->cBloqueado->cantidadNodos > 0) {
 			insertarFinal(prosessPlanificador->cListo, (Process*)obtener(prosessPlanificador->cBloqueado, 0));
 			eliminarElemento(prosessPlanificador->cBloqueado, 0);
@@ -293,9 +366,9 @@ void shedTask() {
 	return;
 
 	alPrioridad:
-		ordenarPorPrioridad();
 		if (prosessPlanificador->cBloqueado->cantidadNodos > 0) {
 			insertarFinal(prosessPlanificador->cListo, (Process*)obtener(prosessPlanificador->cBloqueado, 0));
+			ordenarPorPrioridad();
 			eliminarElemento(prosessPlanificador->cBloqueado, 0);
 		}
 	return;
@@ -312,7 +385,6 @@ void* runProceso(void* args) {
 	
 	while (info->contadorPrograma < info->cantidadDeLineas) {
 		ejecutarInstruccion(info);
-		
 		if (revisarInterrupciones()) {
 			info->estado = bloqueado;
 			pthread_cond_signal(&cPlanificador);
@@ -343,12 +415,12 @@ bool revisarInterrupciones() {
 
 /*Dibuja las palabras del cicho*/
 void drawCicle(cairo_t* cr) {
-	cairo_set_source_rgb(cr, 0.1, 0.1, 0.1);  /*asigna el color para pintar*/
+	cairo_set_source_rgb(cr, 0.1, 0.1, 0.1); 
 
-	cairo_set_font_size(cr, 30);              /*asigna el tamaño para dibujar*/
+	cairo_set_font_size(cr, 30);             
     
-    cairo_move_to(cr, 330, 75);              /*mueve las coordenadas antes de dibujar*/
-    cairo_show_text(cr, "Ejecución"); 		  /*dibuja texto*/
+    cairo_move_to(cr, 330, 75);              
+    cairo_show_text(cr, "Ejecución"); 		  
 
 	cairo_move_to(cr, 20, 250);
 	cairo_show_text(cr, "Bloqueado");
@@ -360,83 +432,57 @@ void drawCicle(cairo_t* cr) {
 void drawProcess(cairo_t* cr) {
 	int i; 
 	int pos;
-	char buffer[20];
+	char buffer[100];
 	cairo_set_font_size(cr, 15);
 	cairo_set_source_rgb(cr, 0.1, 0.95, 0.85);
 	
 	/*Muestra al proceso en ejecución*/
-	cairo_move_to(cr, 350, 100);
-	cairo_show_text(cr, procesoEnEjecucion);
-	//procesoEnEjecucion = " ";
-	/*Muestra los procesos en bloqueado*/
+	if (prosessPlanificador->enEjecucion && prosessPlanificador->enEjecucion->info) { 
+		cairo_move_to(cr, 350, 100);
+		sprintf(buffer,"Proceso %d", prosessPlanificador->enEjecucion->info->id);
+		cairo_show_text(cr, buffer);
+	}
+
 	pos = 275;
-	for (i = 0; i < 10; ++i)
+	int cantidadL = prosessPlanificador->cListo->cantidadNodos;
+
+	for (int i = 0; i < cantidadL; ++i)
+  	{
+  		Process* t = obtener(prosessPlanificador->cListo, i);	
+  		printf("id %d p %d", t->info->id,t->info->prioridad);
+  	}
+  	printf("%s\n", " ");
+
+	for (int i = 0; i < cantidadL; ++i)
 	{
-		cairo_move_to(cr, 20, pos);
-	    cairo_show_text(cr, listaBloqueados[i]);
-		pos += 20;
+		Process* temp = obtener(prosessPlanificador->cListo, i);
+		if (temp && temp->info) {
+			sprintf(buffer, "Proceso %d P: %d", temp->info->id, temp->info->prioridad);
+			cairo_move_to(cr, 650, pos);
+			cairo_show_text(cr, buffer);
+			pos += 20;
+		}
 	}
 
-	/*Muestra los procesos en listo*/
 	pos = 275;
-	for (i = 0; i < 10; ++i)
+	int cantidadB = prosessPlanificador->cBloqueado->cantidadNodos;
+
+	for (int i = 0; i < cantidadB; ++i)
 	{
-		cairo_move_to(cr, 650, pos);
-	    cairo_show_text(cr, listaListos[i]);
-		pos += 20;
+		Process* temp = obtener(prosessPlanificador->cBloqueado, i);
+		if (temp && temp->info) {
+			sprintf(buffer, "Proceso %d P: %d", temp->info->id, temp->info->prioridad);
+			cairo_move_to(cr, 20, pos);
+			cairo_show_text(cr, buffer);
+			pos += 20;
+		}
 	}
 
-	for (int i = 0; i < 10; ++i)
-	{
-		listaBloqueados[i] = " ";
-		listaListos[i] = " ";
-	}
-
-	cairo_set_source_rgb(cr,0.2,1,0);
-	/*Cantidad de bloqueados*/
-	sprintf(buffer,"Cantidad %d", prosessPlanificador->cBloqueado->cantidadNodos);
-	
-	cairo_move_to(cr, 20, pos);
+	cairo_move_to(cr, 200, 250);
+	sprintf(buffer, "%d", prosessPlanificador->cBloqueado->cantidadNodos);
 	cairo_show_text(cr, buffer);
 
-	/*Cantidad de listos*/
-	sprintf(buffer,"Cantidad %d", prosessPlanificador->cListo->cantidadNodos);
-	
-	cairo_move_to(cr, 670, pos);
+	cairo_move_to(cr, 750, 250);
+	sprintf(buffer, "%d", prosessPlanificador->cListo->cantidadNodos);
 	cairo_show_text(cr, buffer);
 } 
-
-void mostrarInformacion() {
-	int i; 
-	char p[20];
-	Process* temp;
-	int cantidadListo = prosessPlanificador->cListo->cantidadNodos;
-	int cantidadBloqueado = prosessPlanificador->cBloqueado->cantidadNodos;
-	if (prosessPlanificador->enEjecucion != NULL && prosessPlanificador->enEjecucion->info) {
-		assert(prosessPlanificador->enEjecucion != NULL);
-		sprintf(p, "Proceso %d", prosessPlanificador->enEjecucion->info->id);
-		procesoEnEjecucion = strdup(p);
-	}
-	for (i = 0; i < cantidadListo; ++i)
-	{
-		temp = (Process*) obtener(prosessPlanificador->cListo, i);
-		if (temp) {
-			if (i < 10) {	
-			sprintf(p,"Proceso %d p: %d", temp->info->id, temp->info->prioridad);
-			listaListos[i] = strdup(p);
-			}
-		}
-	}
-
-	for (i = 0; i < cantidadBloqueado; ++i)
-	{
-		temp = (Process*) obtener(prosessPlanificador->cBloqueado, i);
-		if (temp) {
-			if (i < 10) {
-			sprintf(p,"Proceso %d p: %d", temp->info->id, temp->info->prioridad);	
-			listaBloqueados[i] = strdup(p);
-			}
-		}
-	}
-	/**/
-}

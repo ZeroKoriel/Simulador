@@ -1,12 +1,12 @@
 #include "ArchivoData.h"
 
-void leer(processInfo* p) {
+void leer(processInfo* p, char* ruta) {
 	FILE *f;
    char c;
    char temp[1024];
    int lineas = 0;
-   if ((f = fopen("asm.txt", "r")) == NULL){
-   	perror("asm.txt");
+   if ((f = fopen(ruta, "r")) == NULL){
+   	perror(ruta);
    }
  
    while((c = fgetc(f)) != EOF) {
