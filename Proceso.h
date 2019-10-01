@@ -60,7 +60,7 @@ bool esPlanificableRMS();
 void ordenarPorPrioridad();
 void ordenarPorTamanio();
 void shedTask();
-
+void escogerAlgoritmo();
 void crearProceso(int, int, TipoProceso, char*);
 void eliminarProceso(Process*);
 void balancearColas();

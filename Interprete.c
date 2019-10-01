@@ -1,111 +1,231 @@
 #include "Interprete.h"
-
-void ejecutarInstruccion(processInfo* p) {
-	if (p->contadorPrograma >= p->cantidadDeLineas && p->contadorPrograma >= 0) {
-		return; /*Regresa porque se alcanzó el final del archivo*/
+//listo
+void ejecutarInstruccion(processInfo* proceso) {
+	if (proceso->contadorPrograma >= proceso->cantidadDeLineas && proceso->contadorPrograma >= 0) {
+		return; 
 	} 
-	
-	char* line = p->archivoInstrucciones[p->contadorPrograma];
-	buscarLinea(p, line);
+	//imprimir(proceso);
+	char line[100];
+	memcpy(line, proceso->archivoInstrucciones[proceso->contadorPrograma],
+		strlen(proceso->archivoInstrucciones[proceso->contadorPrograma])+1);
+	printf("%s\n", proceso->archivoInstrucciones[proceso->contadorPrograma]);
+	buscarLinea(proceso, line);
 }
 
+//listo
+void imprimir(processInfo* p) {
+	printf("%s\n", "************************");
+	printf("%s\n", "F");
+	for (int i = 0; i < 32; ++i)
+	{
+		printf("%d ", p->f[i]);
+	}
+	printf("%\nW\n");
+	for (int i = 0; i < 32; ++i)
+	{
+		printf("%d ", p->w[i]);
+	}
+	printf("%\nPORTA\n");
+	for (int i = 0; i < 32; ++i)
+	{
+		printf("%d ", p->PORTA[i]);
+	}
+	printf("%\nPORTB\n");
+	for (int i = 0; i < 32; ++i)
+	{
+		printf("%d ", p->PORTB[i]);
+	}
+	printf("%\nTRISA\n");
+	for (int i = 0; i < 32; ++i)
+	{
+		printf("%d ", p->TRISA[i]);
+	}
+	printf("%\nTRISB\n");
+	for (int i = 0; i < 32; ++i)
+	{
+		printf("%d ", p->TRISB[i]);
+	}
+	printf("%\nSTATUS\n", "STATUS");
+	for (int i = 0; i < 32; ++i)
+	{
+		printf("%d ", p->STATUS[i]);
+	}
+	printf("%\n***************************\n");
+}
+
+//listo
 void buscarLinea(processInfo* p, char* line) {
 	char* nemoTemp = calloc(1, sizeof(char));
 	char* valorTemp = calloc(1, sizeof(char));
 
 	nemoTemp = strtok(line, " ");
 	valorTemp = strtok(NULL, " ");
+
 	
-	if (nemoTemp) {
+	int n=strcmp(nemoTemp," ");
+
+	if (strcmp(nemoTemp," ")>0) {
 		comprobarNemotecnico(p, nemoTemp, valorTemp);
 	} else {
-		char* lineTemp = strtok(p->archivoInstrucciones[p->contadorPrograma], " ");
-		while (strcmp(lineTemp, " ") == 0) {
+		while (strcmp(nemoTemp," ")<=0) {
 			++p->contadorPrograma;
-			lineTemp = strtok(p->archivoInstrucciones[p->contadorPrograma], " ");
+			char linea[100];
+			memcpy(linea, p->archivoInstrucciones[p->contadorPrograma],
+				strlen(p->archivoInstrucciones[p->contadorPrograma])+1);
+			nemoTemp = strtok(linea, " ");
 		}
 		valorTemp = strtok(NULL, " ");
-		comprobarNemotecnico(p, lineTemp, valorTemp);
+		comprobarNemotecnico(p, nemoTemp, valorTemp);
 	}
 }
 
+//listo
+void mCLRF(processInfo* p, char* valor) {
+	if (strcmp(valor, "PORTB\n") == 0) {
+		limpiarRegistro(p->PORTB);
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(valor, "PORTA\n") == 0) {
+		limpiarRegistro(p->PORTA);
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(valor, "STATUS\n") == 0) {
+		limpiarRegistro(p->STATUS);
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(valor, "TRISA\n") == 0) {
+		limpiarRegistro(p->TRISA);
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(valor, "TRISB\n") == 0) {
+		limpiarRegistro(p->TRISB);
+		++p->contadorPrograma;
+		return;
+	}
+}
+
+//listo
+void mGOTO(processInfo* proceso, char* valorTemp){
+	char* valorTemp2 = calloc(1, sizeof(char));
+	char line[100];
+	char* temp1 = calloc(1, sizeof(char));
+
+	valorTemp2 = strtok(valorTemp, "$");
+
+	if(atoi(valorTemp2)==0){
+		for (int i = 0; i < proceso->cantidadDeLineas; ++i)
+		{
+			memcpy(line, proceso->archivoInstrucciones[i],
+				strlen(proceso->archivoInstrucciones[i])+1);
+			temp1=strtok(line," ");
+			if(strcmp(temp1, valorTemp) == 0){
+				proceso->contadorPrograma=i;
+				break;
+			}
+		}
+	}else{
+		proceso->contadorPrograma+=atoi(valorTemp2);
+	}
+}//GOTO
+
+//listo
 void comprobarNemotecnico(processInfo* p, char* nemo, char* valor) {
 	if (strcmp(nemo, "CLRF") == 0) {          
 		mCLRF(p, valor);
+		return;
 	} else if (strcmp(nemo, "CLRW") == 0) {         
 		mCLRW(p);
+		return;
 	} else if (strcmp(nemo, "MOVWF") == 0) {         
 		mMOVWF(p, valor);
+		return;
 	} else if (strcmp(nemo, "ADDLW") == 0) { 
 		mADDLW(p, valor);
+		return;
 	} else if (strcmp(nemo, "ANDLW") == 0) {              
 		mANDLW(p, valor);
-	} else if (strcmp(nemo, "GOTO") == 0) {               
+		return;
+	} else if (strcmp(nemo, "GOTO") == 0) {
 		mGOTO(p, valor);
+		return;
 	} else if (strcmp(nemo, "IORLW") == 0) {              
 		mIORLW(p, valor);
+		return;
 	} else if (strcmp(nemo, "SUBLW") == 0) { 
 		mSUBLW(p, valor);
+		return;
 	} else if (strcmp(nemo, "ADDWF") == 0) { /*suma w con f  se guarda en w*/
 		mADDWF(p, valor);
+		return;
 	} else if (strcmp(nemo, "ANDWF") == 0) {  
 		mANDWF(p, valor);
+		return;
 	} else if (strcmp(nemo, "MOVF") == 0) {  
 		mMOVF(p, valor);
+		return;
 	} else if (strcmp(nemo, "SUBWF") == 0) { //SUBWF f,d ejecuta f-w y guarda en d
 		mSUBWF(p, valor);
+		return;
 	} else if (strcmp(nemo, "BCF") == 0) {
 		mBCF(p, valor);
+		return;
 	} else if (strcmp(nemo, "BSF") == 0) {      
 		mBSF(p, valor);
+		return;
 	} else if (strcmp(nemo, "CALL") == 0) {        
 		mCALL(p, valor);
+		return;
 	} else if (strcmp(nemo, "RETURN") == 0) {      
 		mRETURN(p, valor);
+		return;
 	} else if (strcmp(nemo, "END") == 0) {         
 		p->contadorPrograma = p->cantidadDeLineas;
+		return;
 	} else if (strcmp(nemo, "BTFSC") == 0) {      
 		mBTFSC(p, valor);
+		return;
 	} else if (strcmp(nemo, "MOVLW") == 0) {        
 		mMOVLW(p, valor);
+		return;
+	} else if (strcmp(nemo, "BTFSS") == 0) {
+		mBTFSS(p, valor);
+		return;
 	} 
+		++p->contadorPrograma;	
 }
 
-void mCLRF(processInfo* p, char* valor) {
-	if (strcmp(valor, "PORTB") == 0) {
-		limpiarRegistro(p->PORTB);
-	} else if (strcmp(valor, "PORTA") == 0) {
-		limpiarRegistro(p->PORTA);
-	} else if (strcmp(valor, "STATUS") == 0) {
-		limpiarRegistro(p->STATUS);
-	} else if (strcmp(valor, "TRISA") == 0) {
-		limpiarRegistro(p->TRISA);
-	} else if (strcmp(valor, "TRISB") == 0) {
-		limpiarRegistro(p->TRISB);
-	}
-	++p->contadorPrograma;
-}
-
+//listo
 void mCLRW(processInfo* p) {
 	limpiarRegistro(p->w);
 	++p->contadorPrograma;
 }
 
+//listo
 void mMOVWF(processInfo* p, char* valor) {
 	if (strcmp(valor, "PORTA") == 0) {
 		copiarRegistro(p->PORTA, p->w);
+		++p->contadorPrograma;
+		return;
 	} else if (strcmp(valor, "PORTB") == 0) {
 		copiarRegistro(p->PORTB, p->w);
+		++p->contadorPrograma;
+		return;
 	} else if (strcmp(valor, "STATUS") == 0) {
 		copiarRegistro(p->STATUS, p->w);
+		++p->contadorPrograma;
+		return;
 	} else if (strcmp(valor, "TRISA") == 0) {
 		copiarRegistro(p->TRISA, p->w);
+		++p->contadorPrograma;
+		return;
 	} else if (strcmp(valor, "TRISB") == 0) {
 		copiarRegistro(p->TRISB, p->w);
+		++p->contadorPrograma;
+		return;
 	}
-	++p->contadorPrograma;
 }
 
+//listo
 void mADDLW(processInfo* p, char* valor) { 
 	int i;
 	int c = 0;
@@ -158,140 +278,260 @@ void mADDLW(processInfo* p, char* valor) {
 	++p->contadorPrograma;
 }
 
+//listo
 void mANDLW(processInfo* p, char* valor) {
-	if (strcmp(valor, "PORTA") == 0) {
+	if (strcmp(valor, "PORTA\n") == 0) {
 		andRegistros(p->PORTA, p->w);
-	} else if (strcmp(valor, "PORTB") == 0) {
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(valor, "PORTB\n") == 0) {
 		andRegistros(p->PORTB, p->w);
-	} else if (strcmp(valor, "STATUS") == 0) {
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(valor, "STATUS\n") == 0) {
 		andRegistros(p->STATUS, p->w);
-	} else if (strcmp(valor, "TRISA") == 0) {
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(valor, "TRISA\n") == 0) {
 		andRegistros(p->TRISA, p->w);
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(valor, "TRISB\n") == 0) {
+		andRegistros(p->TRISB, p->w);
+		++p->contadorPrograma;
+		return;
 	}
-	++p->contadorPrograma;
 }
 
-void mGOTO(processInfo* p, char* valor) {
-	int i;
-	/*En el caso de que solo tenga que moverse una cantidad de líneas*/
-	char* valCambiar = strtok(valor, "$");
-	int c = atoi(valCambiar);
-	if (c != 0) {
-		p->contadorPrograma += c;
-	} else {
-		/*En el caso de que no se encuetre un $*/
-		int cTemp = 0;
-		char* lTemp = calloc(1, sizeof(char));
-		lTemp = strtok(p->archivoInstrucciones[cTemp], " ");
-		while ((cTemp < p->cantidadDeLineas) && (strcmp(lTemp, valor) != 0)) {
-			cTemp++;
-			lTemp = strtok(p->archivoInstrucciones[cTemp], " ");
-	    }
-	
-		if (strcmp(lTemp, valor) == 0) {
-			p->contadorPrograma = cTemp;
-		}
-	}
-	++p->contadorPrograma;
-}
-
+//listo
 void mIORLW(processInfo* p, char* valor) {
-	if (strcmp(valor, "STATUS") == 0) {
+	if (strcmp(valor, "STATUS\n") == 0) {
 		orRegistros(p->STATUS, p->w);
-	} else if (strcmp(valor, "TRISA") == 0) {
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(valor, "TRISA\n") == 0) {
 		orRegistros(p->TRISA, p->w);
-	} else if (strcmp(valor, "PORTA") == 0) {
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(valor, "PORTA\n") == 0) {
 		orRegistros(p->PORTA, p->w);
-	} else if (strcmp(valor, "PORTB") == 0) {
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(valor, "PORTB\n") == 0) {
 		orRegistros(p->PORTB, p->w);
+		++p->contadorPrograma;
+		return;
 	}
-	++p->contadorPrograma;
 }
 
+//listo
 void mSUBLW(processInfo* p, char* valor) { 
-	if (strcmp(valor, "PORTA") == 0) {
+	if (strcmp(valor, "PORTA\n") == 0) {
 		restarRegistros(p->PORTA, p->w);
-	} else if (strcmp(valor, "PORTB") == 0) {
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(valor, "PORTB\n") == 0) {
 		restarRegistros(p->PORTB, p->w);
-	} else if (strcmp(valor, "STATUS") == 0) {
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(valor, "STATUS\n") == 0) {
 		restarRegistros(p->STATUS, p->w);
-	} else if (strcmp(valor, "TRISA") == 0) {
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(valor, "TRISA\n") == 0) {
 		restarRegistros(p->TRISA, p->w);
-	} else if (strcmp(valor, "TRISB") == 0) {
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(valor, "TRISB\n") == 0) {
 		restarRegistros(p->TRISB, p->w);
-	}
-	++p->contadorPrograma;
+		++p->contadorPrograma;
+		return;
+	}	
 }
 
+//listo
 void mADDWF(processInfo* p, char* valor) { 
-	int i;
-	int c = 0;
-
 	char* reg1 = calloc(1, sizeof(char));
 	char* reg2 = calloc(1, sizeof(char));
 
 	reg1 = strtok(valor, ",");
 	reg2 = strtok(NULL, ",");
 
-	if (strcmp(reg1, "PORTA") == 0 && strcmp(reg2, "PORTB") == 0) {
+	if (strcmp(reg1, "PORTA") == 0 && strcmp(reg2, "PORTB\n") == 0) {
 		sumarRegistros(p->w, p->PORTA, p->PORTB);
-	} else if (strcmp(reg1, "PORTA") == 0 && strcmp(reg2, "TRISA") == 0) {
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "PORTA") == 0 && strcmp(reg2, "TRISA\n") == 0) {
 		sumarRegistros(p->w, p->PORTA, p->TRISA);
-	} else if (strcmp(reg1, "PORTA") == 0 && strcmp(reg2, "TRISB") == 0) {
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "PORTA") == 0 && strcmp(reg2, "TRISB\n") == 0) {
 		sumarRegistros(p->w, p->PORTA, p->TRISB);
-	} else if (strcmp(reg1, "PORTA") == 0 && strcmp(reg2, "STATUS") == 0) {
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "PORTA") == 0 && strcmp(reg2, "STATUS\n") == 0) {
 		sumarRegistros(p->w, p->PORTA, p->STATUS);
-	} else if (strcmp(reg1, "PORTB") == 0 && strcmp(reg2, "PORTA") == 0) {
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "PORTB") == 0 && strcmp(reg2, "PORTA\n") == 0) {
 		sumarRegistros(p->w, p->PORTB, p->PORTA);
-	} else if (strcmp(reg1, "PORTB") == 0 && strcmp(reg2, "TRISA") == 0) {
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "PORTB") == 0 && strcmp(reg2, "TRISA\n") == 0) {
 		sumarRegistros(p->w, p->PORTB, p->TRISA);
-	} else if (strcmp(reg1, "PORTB") == 0 && strcmp(reg2, "TRISB") == 0) {
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "PORTB") == 0 && strcmp(reg2, "TRISB\n") == 0) {
 		sumarRegistros(p->w, p->PORTB, p->TRISB);
-	} else if (strcmp(reg1, "PORTB") == 0 && strcmp(reg2, "STATUS") == 0) {
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "PORTB") == 0 && strcmp(reg2, "STATUS\n") == 0) {
 		sumarRegistros(p->w, p->PORTB, p->STATUS);
-	} else if (strcmp(reg1, "TRISA") == 0 && strcmp(reg2, "PORTA") == 0) {
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "TRISA") == 0 && strcmp(reg2, "PORTA\n") == 0) {
 		sumarRegistros(p->w, p->TRISA, p->PORTA);
-	} else if (strcmp(reg1, "TRISA") == 0 && strcmp(reg2, "PORTB") == 0) {
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "TRISA") == 0 && strcmp(reg2, "PORTB\n") == 0) {
 		sumarRegistros(p->w, p->TRISA, p->PORTB);
-	} else if (strcmp(reg1, "TRISA") == 0 && strcmp(reg2, "TRISB") == 0) {
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "TRISA") == 0 && strcmp(reg2, "TRISB\n") == 0) {
 		sumarRegistros(p->w, p->TRISA, p->TRISB);
-	} else if (strcmp(reg1, "TRISA") == 0 && strcmp(reg2, "STATUS") == 0) {
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "TRISA") == 0 && strcmp(reg2, "STATUS\n") == 0) {
 		sumarRegistros(p->w, p->TRISA, p->STATUS);
-	} else if (strcmp(reg1, "TRISB") == 0 && strcmp(reg2, "PORTA") == 0) {
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "TRISB") == 0 && strcmp(reg2, "PORTA\n") == 0) {
 		sumarRegistros(p->w, p->TRISB, p->PORTA);
-	} else if (strcmp(reg1, "TRISB") == 0 && strcmp(reg2, "PORTB") == 0) {
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "TRISB") == 0 && strcmp(reg2, "PORTB\n") == 0) {
 		sumarRegistros(p->w, p->TRISB, p->PORTB);
-	} else if (strcmp(reg1, "TRISB") == 0 && strcmp(reg2, "TRISA") == 0) {
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "TRISB") == 0 && strcmp(reg2, "TRISA\n") == 0) {
 		sumarRegistros(p->w, p->TRISB, p->TRISA);
-	} else if (strcmp(reg1, "TRISB") == 0 && strcmp(reg2, "STATUS") == 0) {
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "TRISB") == 0 && strcmp(reg2, "STATUS\n") == 0) {
 		sumarRegistros(p->w, p->TRISB, p->STATUS);
-	} else if (strcmp(reg1, "STATUS") == 0 && strcmp(reg2, "PORTA") == 0) {
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "STATUS") == 0 && strcmp(reg2, "PORTA\n") == 0) {
 		sumarRegistros(p->w, p->STATUS, p->PORTA);
-	} else if (strcmp(reg1, "STATUS") == 0 && strcmp(reg2, "PORTB") == 0) {
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "STATUS") == 0 && strcmp(reg2, "PORTB\n") == 0) {
 		sumarRegistros(p->w, p->STATUS, p->PORTB);
-	} else if (strcmp(reg1, "STATUS") == 0 && strcmp(reg2, "TRISA") == 0) {
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "STATUS") == 0 && strcmp(reg2, "TRISA\n") == 0) {
 		sumarRegistros(p->w, p->STATUS, p->TRISA);
-	} else if (strcmp(reg1, "STATUS") == 0 && strcmp(reg2, "TRISB") == 0) {
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "STATUS") == 0 && strcmp(reg2, "TRISB\n") == 0) {
 		sumarRegistros(p->w, p->STATUS, p->TRISB);
+		++p->contadorPrograma;
+		return;
 	}
-	++p->contadorPrograma;
 }
 
+//listo
 void mANDWF(processInfo* p, char* valor) {
-	if (strcmp(valor, "PORTA") == 0) {
-		andFRegistros(p->PORTA, p->f);
-	} else if (strcmp(valor, "PORTB") == 0) {
-		andFRegistros(p->PORTB, p->f);
-	} else if (strcmp(valor, "STATUS") == 0) {
-		andFRegistros(p->STATUS, p->f);
-	} else if (strcmp(valor, "TRISA") == 0) {
-		andFRegistros(p->TRISA, p->f);
-	} else if (strcmp(valor, "TRISB") == 0) {
-		andFRegistros(p->TRISB, p->f);
+	char* reg1 = calloc(1, sizeof(char));
+	char* reg2 = calloc(1, sizeof(char));
+
+	reg1 = strtok(valor, ",");
+	reg2 = strtok(NULL, ",");
+
+	if (strcmp(reg1, "PORTA") == 0 && strcmp(reg2, "PORTB\n") == 0) {
+		andFRegistros(p->w, p->PORTA, p->PORTB);
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "PORTA") == 0 && strcmp(reg2, "TRISA\n") == 0) {
+		andFRegistros(p->w, p->PORTA, p->TRISA);
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "PORTA") == 0 && strcmp(reg2, "TRISB\n") == 0) {
+		andFRegistros(p->w, p->PORTA, p->TRISB);
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "PORTA") == 0 && strcmp(reg2, "STATUS\n") == 0) {
+		andFRegistros(p->w, p->PORTA, p->STATUS);
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "PORTB") == 0 && strcmp(reg2, "PORTA\n") == 0) {
+		andFRegistros(p->w, p->PORTB, p->PORTA);
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "PORTB") == 0 && strcmp(reg2, "TRISA\n") == 0) {
+		andFRegistros(p->w, p->PORTB, p->TRISA);
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "PORTB") == 0 && strcmp(reg2, "TRISB\n") == 0) {
+		andFRegistros(p->w, p->PORTB, p->TRISB);
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "PORTB") == 0 && strcmp(reg2, "STATUS\n") == 0) {
+		andFRegistros(p->w, p->PORTB, p->STATUS);
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "TRISA") == 0 && strcmp(reg2, "PORTA\n") == 0) {
+		andFRegistros(p->w, p->TRISA, p->PORTA);
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "TRISA") == 0 && strcmp(reg2, "PORTB\n") == 0) {
+		andFRegistros(p->w, p->TRISA, p->PORTB);
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "TRISA") == 0 && strcmp(reg2, "TRISB\n") == 0) {
+		andFRegistros(p->w, p->TRISA, p->TRISB);
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "TRISA") == 0 && strcmp(reg2, "STATUS\n") == 0) {
+		andFRegistros(p->w, p->TRISA, p->STATUS);
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "TRISB") == 0 && strcmp(reg2, "PORTA\n") == 0) {
+		andFRegistros(p->w, p->TRISB, p->PORTA);
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "TRISB") == 0 && strcmp(reg2, "PORTB\n") == 0) {
+		andFRegistros(p->w, p->TRISB, p->PORTB);
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "TRISB") == 0 && strcmp(reg2, "TRISA\n") == 0) {
+		andFRegistros(p->w, p->TRISB, p->TRISA);
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "TRISB") == 0 && strcmp(reg2, "STATUS\n") == 0) {
+		andFRegistros(p->w, p->TRISB, p->STATUS);
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "STATUS") == 0 && strcmp(reg2, "PORTA\n") == 0) {
+		andFRegistros(p->w, p->STATUS, p->PORTA);
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "STATUS") == 0 && strcmp(reg2, "PORTB\n") == 0) {
+		andFRegistros(p->w, p->STATUS, p->PORTB);
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "STATUS") == 0 && strcmp(reg2, "TRISA\n") == 0) {
+		andFRegistros(p->w, p->STATUS, p->TRISA);
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "STATUS") == 0 && strcmp(reg2, "TRISB\n") == 0) {
+		andFRegistros(p->w, p->STATUS, p->TRISB);
+		++p->contadorPrograma;
+		return;
 	}
-	++p->contadorPrograma;
 }
 
+//listo
 void mMOVF(processInfo* p, char* valor) {
 	char* valReg1 = calloc(1, sizeof(char));
 	char* valReg2 = calloc(1, sizeof(char));
@@ -299,50 +539,90 @@ void mMOVF(processInfo* p, char* valor) {
 	valReg1 = strtok(valor, ",");
 	valReg2 = strtok(NULL, ",");
 
-	if ((strcmp(valReg1, "PORTA") == 0) && (strcmp(valReg2, "PORTB") == 0)) {
+	if ((strcmp(valReg1, "PORTA") == 0) && (strcmp(valReg2, "PORTB\n") == 0)) {
 		copiarRegistro(p->PORTB, p->PORTA);
-	} else if ((strcmp(valReg1, "PORTA") == 0) && (strcmp(valReg2, "STATUS") == 0)) {
+		++p->contadorPrograma;
+		return;
+	} else if ((strcmp(valReg1, "PORTA") == 0) && (strcmp(valReg2, "STATUS\n") == 0)) {
 		copiarRegistro(p->STATUS, p->PORTA);
-	} else if ((strcmp(valReg1, "PORTA") == 0) && (strcmp(valReg2, "TRISA") == 0)) {
+		++p->contadorPrograma;
+		return;
+	} else if ((strcmp(valReg1, "PORTA") == 0) && (strcmp(valReg2, "TRISA\n") == 0)) {
 		copiarRegistro(p->TRISA, p->PORTA);
-	} else if ((strcmp(valReg1, "PORTB") == 0) && (strcmp(valReg2, "PORTA") == 0)) {
+		++p->contadorPrograma;
+		return;
+	} else if ((strcmp(valReg1, "PORTB") == 0) && (strcmp(valReg2, "PORTA\n") == 0)) {
 		copiarRegistro(p->PORTA, p->PORTB);
-	} else if ((strcmp(valReg1, "PORTB") == 0) && (strcmp(valReg2, "STATUS") == 0)) {
+		++p->contadorPrograma;
+		return;
+	} else if ((strcmp(valReg1, "PORTB") == 0) && (strcmp(valReg2, "STATUS\n") == 0)) {
 		copiarRegistro(p->STATUS, p->PORTB);
-	} else if ((strcmp(valReg1, "PORTB") == 0) && (strcmp(valReg2, "TRISA") == 0)) {
+		++p->contadorPrograma;
+		return;
+	} else if ((strcmp(valReg1, "PORTB") == 0) && (strcmp(valReg2, "TRISA\n") == 0)) {
 		copiarRegistro(p->TRISA, p->PORTB);
-	} else if ((strcmp(valReg1, "STATUS") == 0) && (strcmp(valReg2, "PORTA") == 0)) {
+		++p->contadorPrograma;
+		return;
+	} else if ((strcmp(valReg1, "STATUS") == 0) && (strcmp(valReg2, "PORTA\n") == 0)) {
 		copiarRegistro(p->PORTA, p->STATUS);
-	} else if ((strcmp(valReg1, "STATUS") == 0) && (strcmp(valReg2, "PORTB") == 0)) {
+		++p->contadorPrograma;
+		return;
+	} else if ((strcmp(valReg1, "STATUS") == 0) && (strcmp(valReg2, "PORTB\n") == 0)) {
 		copiarRegistro(p->PORTB, p->STATUS);
-	} else if ((strcmp(valReg1, "STATUS") == 0) && (strcmp(valReg2, "TRISA") == 0)) {
+		++p->contadorPrograma;
+		return;
+	} else if ((strcmp(valReg1, "STATUS") == 0) && (strcmp(valReg2, "TRISA\n") == 0)) {
 		copiarRegistro(p->TRISA, p->STATUS);
-	} else if ((strcmp(valReg1, "TRISA") == 0) && (strcmp(valReg2, "PORTA") == 0)) {
+		++p->contadorPrograma;
+		return;
+	} else if ((strcmp(valReg1, "TRISA") == 0) && (strcmp(valReg2, "PORTA\n") == 0)) {
 		copiarRegistro(p->PORTA, p->TRISA);
-	} else if ((strcmp(valReg1, "TRISA") == 0) && (strcmp(valReg2, "PORTB") == 0)) {
+		++p->contadorPrograma;
+		return;
+	} else if ((strcmp(valReg1, "TRISA") == 0) && (strcmp(valReg2, "PORTB\n") == 0)) {
 		copiarRegistro(p->PORTB, p->TRISA);
-	} else if ((strcmp(valReg1, "TRISA") == 0) && (strcmp(valReg2, "STATUS") == 0)) {
+		++p->contadorPrograma;
+		return;
+	} else if ((strcmp(valReg1, "TRISA") == 0) && (strcmp(valReg2, "STATUS\n") == 0)) {
 		copiarRegistro(p->STATUS, p->TRISA);
-	} else if ((strcmp(valReg1, "TRISA") == 0) && (strcmp(valReg2, "TRISB") == 0)) {//*********
+		++p->contadorPrograma;
+		return;
+	} else if ((strcmp(valReg1, "TRISA") == 0) && (strcmp(valReg2, "TRISB\n") == 0)) {//*********
 		copiarRegistro(p->TRISB, p->TRISA);
-	} else if ((strcmp(valReg1, "PORTA") == 0) && (strcmp(valReg2, "TRISB") == 0)) {
+		++p->contadorPrograma;
+		return;
+	} else if ((strcmp(valReg1, "PORTA") == 0) && (strcmp(valReg2, "TRISB\n") == 0)) {
 		copiarRegistro(p->TRISB, p->PORTA);
-	} else if ((strcmp(valReg1, "PORTB") == 0) && (strcmp(valReg2, "TRISB") == 0)) {
+		++p->contadorPrograma;
+		return;
+	} else if ((strcmp(valReg1, "PORTB") == 0) && (strcmp(valReg2, "TRISB\n") == 0)) {
 		copiarRegistro(p->TRISB, p->PORTB);
-	} else if ((strcmp(valReg1, "STATUS") == 0) && (strcmp(valReg2, "TRISB") == 0)) {
+		++p->contadorPrograma;
+		return;
+	} else if ((strcmp(valReg1, "STATUS") == 0) && (strcmp(valReg2, "TRISB\n") == 0)) {
 		copiarRegistro(p->TRISB, p->STATUS);
-	} else if ((strcmp(valReg1, "TRISB") == 0) && (strcmp(valReg2, "PORTB") == 0)) {
+		++p->contadorPrograma;
+		return;
+	} else if ((strcmp(valReg1, "TRISB") == 0) && (strcmp(valReg2, "PORTB\n") == 0)) {
 		copiarRegistro(p->PORTB, p->TRISB);
-	} else if ((strcmp(valReg1, "TRISB") == 0) && (strcmp(valReg2, "STATUS") == 0)) {
+		++p->contadorPrograma;
+		return;
+	} else if ((strcmp(valReg1, "TRISB") == 0) && (strcmp(valReg2, "STATUS\n") == 0)) {
 		copiarRegistro(p->STATUS, p->TRISB);
-	} else if ((strcmp(valReg1, "TRISB") == 0) && (strcmp(valReg2, "TRISA") == 0)) {
+		++p->contadorPrograma;
+		return;
+	} else if ((strcmp(valReg1, "TRISB") == 0) && (strcmp(valReg2, "TRISA\n") == 0)) {
 		copiarRegistro(p->TRISA, p->TRISB);
-	} else if ((strcmp(valReg1, "TRISB") == 0) && (strcmp(valReg2, "PORTA") == 0)) {
+		++p->contadorPrograma;
+		return;
+	} else if ((strcmp(valReg1, "TRISB") == 0) && (strcmp(valReg2, "PORTA\n") == 0)) {
 		copiarRegistro(p->PORTA, p->TRISB);
+		++p->contadorPrograma;
+		return;
 	}
-	++p->contadorPrograma;
 }
 
+//listo
 void mSUBWF(processInfo* p, char* valor) { //en desarrollo
 	char* reg1 = calloc(1, sizeof(char));
 	char* reg2 = calloc(1, sizeof(char));
@@ -350,147 +630,426 @@ void mSUBWF(processInfo* p, char* valor) { //en desarrollo
 	reg1 = strtok(valor, ",");
 	reg2 = strtok(NULL, ",");
 
-	if (strcmp(reg1, "PORTA") == 0 && strcmp(reg2, "PORTB") == 0) {
-		sumarRegistros(p->w, p->PORTA, p->PORTB);
-	} else if (strcmp(reg1, "PORTA") == 0 && strcmp(reg2, "TRISA") == 0) {
-		sumarRegistros(p->w, p->PORTA, p->TRISA);
-	} else if (strcmp(reg1, "PORTA") == 0 && strcmp(reg2, "TRISB") == 0) {
-		sumarRegistros(p->w, p->PORTA, p->TRISB);
-	} else if (strcmp(reg1, "PORTA") == 0 && strcmp(reg2, "STATUS") == 0) {
-		sumarRegistros(p->w, p->PORTA, p->STATUS);
-	} else if (strcmp(reg1, "PORTB") == 0 && strcmp(reg2, "PORTA") == 0) {
-		sumarRegistros(p->w, p->PORTB, p->PORTA);
-	} else if (strcmp(reg1, "PORTB") == 0 && strcmp(reg2, "TRISA") == 0) {
-		sumarRegistros(p->w, p->PORTB, p->TRISA);
-	} else if (strcmp(reg1, "PORTB") == 0 && strcmp(reg2, "TRISB") == 0) {
-		sumarRegistros(p->w, p->PORTB, p->TRISB);
-	} else if (strcmp(reg1, "PORTB") == 0 && strcmp(reg2, "STATUS") == 0) {
-		sumarRegistros(p->w, p->PORTB, p->STATUS);
-	} else if (strcmp(reg1, "TRISA") == 0 && strcmp(reg2, "PORTA") == 0) {
-		sumarRegistros(p->w, p->TRISA, p->PORTA);
-	} else if (strcmp(reg1, "TRISA") == 0 && strcmp(reg2, "PORTB") == 0) {
-		sumarRegistros(p->w, p->TRISA, p->PORTB);
-	} else if (strcmp(reg1, "TRISA") == 0 && strcmp(reg2, "TRISB") == 0) {
-		sumarRegistros(p->w, p->TRISA, p->TRISB);
-	} else if (strcmp(reg1, "TRISA") == 0 && strcmp(reg2, "STATUS") == 0) {
-		sumarRegistros(p->w, p->TRISA, p->STATUS);
-	} else if (strcmp(reg1, "TRISB") == 0 && strcmp(reg2, "PORTA") == 0) {
-		sumarRegistros(p->w, p->TRISB, p->PORTA);
-	} else if (strcmp(reg1, "TRISB") == 0 && strcmp(reg2, "PORTB") == 0) {
-		sumarRegistros(p->w, p->TRISB, p->PORTB);
-	} else if (strcmp(reg1, "TRISB") == 0 && strcmp(reg2, "TRISA") == 0) {
-		sumarRegistros(p->w, p->TRISB, p->TRISA);
-	} else if (strcmp(reg1, "TRISB") == 0 && strcmp(reg2, "STATUS") == 0) {
-		sumarRegistros(p->w, p->TRISB, p->STATUS);
-	} else if (strcmp(reg1, "STATUS") == 0 && strcmp(reg2, "PORTA") == 0) {
-		sumarRegistros(p->w, p->STATUS, p->PORTA);
-	} else if (strcmp(reg1, "STATUS") == 0 && strcmp(reg2, "PORTB") == 0) {
-		sumarRegistros(p->w, p->STATUS, p->PORTB);
-	} else if (strcmp(reg1, "STATUS") == 0 && strcmp(reg2, "TRISA") == 0) {
-		sumarRegistros(p->w, p->STATUS, p->TRISA);
-	} else if (strcmp(reg1, "STATUS") == 0 && strcmp(reg2, "TRISB") == 0) {
-		sumarRegistros(p->w, p->STATUS, p->TRISB);
+	if (strcmp(reg1, "PORTA") == 0 && strcmp(reg2, "PORTB\n") == 0) {
+		restarFRegistros(p->w, p->PORTA, p->PORTB);
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "PORTA") == 0 && strcmp(reg2, "TRISA\n") == 0) {
+		restarFRegistros(p->w, p->PORTA, p->TRISA);
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "PORTA") == 0 && strcmp(reg2, "TRISB\n") == 0) {
+		restarFRegistros(p->w, p->PORTA, p->TRISB);
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "PORTA") == 0 && strcmp(reg2, "STATUS\n") == 0) {
+		restarFRegistros(p->w, p->PORTA, p->STATUS);
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "PORTB") == 0 && strcmp(reg2, "PORTA\n") == 0) {
+		restarFRegistros(p->w, p->PORTB, p->PORTA);
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "PORTB") == 0 && strcmp(reg2, "TRISA\n") == 0) {
+		restarFRegistros(p->w, p->PORTB, p->TRISA);
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "PORTB") == 0 && strcmp(reg2, "TRISB\n") == 0) {
+		restarFRegistros(p->w, p->PORTB, p->TRISB);
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "PORTB") == 0 && strcmp(reg2, "STATUS\n") == 0) {
+		restarFRegistros(p->w, p->PORTB, p->STATUS);
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "TRISA") == 0 && strcmp(reg2, "PORTA\n") == 0) {
+		restarFRegistros(p->w, p->TRISA, p->PORTA);
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "TRISA") == 0 && strcmp(reg2, "PORTB\n") == 0) {
+		restarFRegistros(p->w, p->TRISA, p->PORTB);
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "TRISA") == 0 && strcmp(reg2, "TRISB\n") == 0) {
+		restarFRegistros(p->w, p->TRISA, p->TRISB);
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "TRISA") == 0 && strcmp(reg2, "STATUS\n") == 0) {
+		restarFRegistros(p->w, p->TRISA, p->STATUS);
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "TRISB") == 0 && strcmp(reg2, "PORTA\n") == 0) {
+		restarFRegistros(p->w, p->TRISB, p->PORTA);
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "TRISB") == 0 && strcmp(reg2, "PORTB\n") == 0) {
+		restarFRegistros(p->w, p->TRISB, p->PORTB);
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "TRISB") == 0 && strcmp(reg2, "TRISA\n") == 0) {
+		restarFRegistros(p->w, p->TRISB, p->TRISA);
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "TRISB") == 0 && strcmp(reg2, "STATUS\n") == 0) {
+		restarFRegistros(p->w, p->TRISB, p->STATUS);
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "STATUS") == 0 && strcmp(reg2, "PORTA\n") == 0) {
+		restarFRegistros(p->w, p->STATUS, p->PORTA);
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "STATUS") == 0 && strcmp(reg2, "PORTB\n") == 0) {
+		restarFRegistros(p->w, p->STATUS, p->PORTB);
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "STATUS") == 0 && strcmp(reg2, "TRISA\n") == 0) {
+		restarFRegistros(p->w, p->STATUS, p->TRISA);
+		++p->contadorPrograma;
+		return;
+	} else if (strcmp(reg1, "STATUS") == 0 && strcmp(reg2, "TRISB\n") == 0) {
+		restarFRegistros(p->w, p->STATUS, p->TRISB);
+		++p->contadorPrograma;
+		return;
 	}
-	++p->contadorPrograma;
 }
 
+//listo
 void mBCF(processInfo* p, char* valor) {
-	/*Escribe un 0, en la posición de un registro*/
+	/*Escribe un 1, en la posición de un registro*/
 	char* valReg = calloc(1, sizeof(char));
 	char* valPos = calloc(1, sizeof(char));
-	valReg = strtok(valor, ",");
+	char* temp = calloc(1, sizeof(char));
+	temp = strtok(valor, ",");
 	valPos = strtok(NULL, ",");
-	int posicion = atoi(valPos);
-	if (strcmp(valReg, "STATUS")) {
+
+	valReg = strdup(temp);
+
+	int posicion = 31-atoi(valPos);
+
+	if (strcmp(valReg, "STATUS") == 0) {
 		p->STATUS[posicion] = 0;
+		++p->contadorPrograma;
 	} else if (strcmp(valReg, "PORTA") == 0) {
 		p->PORTA[posicion] = 0;
+		++p->contadorPrograma;
 	} else if (strcmp(valReg, "PORTB") == 0) {
 		p->PORTB[posicion] = 0;
+		++p->contadorPrograma;
 	} else if (strcmp(valReg, "TRISA") == 0) {
 		p->TRISA[posicion] = 0;
+		++p->contadorPrograma;
+	} else if (strcmp(valReg, "TRISB") == 0) {
+		p->TRISB[posicion] = 0;
+		++p->contadorPrograma;
 	}
-	++p->contadorPrograma;
 }
-
+//listo
 void mBSF(processInfo* p, char* valor) {
 	/*Escribe un 1, en la posición de un registro*/
 	char* valReg = calloc(1, sizeof(char));
 	char* valPos = calloc(1, sizeof(char));
-	valReg = strtok(valor, ",");
+	char* temp = calloc(1, sizeof(char));
+	temp = strtok(valor, ",");
 	valPos = strtok(NULL, ",");
-	int posicion = atoi(valPos);
 
-	if (strcmp(valReg, "STATUS")) {
+	valReg = strdup(temp);
+
+	int posicion = 31-atoi(valPos);
+
+	if (strcmp(valReg, "STATUS") == 0) {
 		p->STATUS[posicion] = 1;
+		++p->contadorPrograma;
 	} else if (strcmp(valReg, "PORTA") == 0) {
 		p->PORTA[posicion] = 1;
+		++p->contadorPrograma;
 	} else if (strcmp(valReg, "PORTB") == 0) {
 		p->PORTB[posicion] = 1;
+		++p->contadorPrograma;
 	} else if (strcmp(valReg, "TRISA") == 0) {
 		p->TRISA[posicion] = 1;
+		++p->contadorPrograma;
+	} else if (strcmp(valReg, "TRISB") == 0) {
+		p->TRISB[posicion] = 1;
+		++p->contadorPrograma;
 	}
-	++p->contadorPrograma;
 }
 
+//listo
 void mCALL(processInfo* p, char* valor) {
-	int cTemp = 0;
-	char* lTemp = calloc(1, sizeof(char));
-	lTemp = strtok(p->archivoInstrucciones[cTemp], " ");
-	while ((cTemp < p->cantidadDeLineas) && (strcmp(lTemp, valor) != 0)) {
-		cTemp++;
+	char line[100];
+	char* temp1 = calloc(1, sizeof(char));
+
+	for (int i = 0; i < p->cantidadDeLineas; ++i)
+	{
+		memcpy(line, p->archivoInstrucciones[i],
+			strlen(p->archivoInstrucciones[i])+1);
+		temp1=strtok(line," ");
+		if(strcmp(temp1, valor) == 0){
+			p->contadorPrograma=i;
+			break;
+		}
 	}
-	if (strcmp(lTemp, valor) == 0) {
-		p->contadorPrograma = cTemp;
-	}
-	++p->contadorPrograma;
 }
 
+//listo
 void mRETURN(processInfo* p, char* valor) {
-	int cTemp = 0;
-	char* lTemp = calloc(1, sizeof(char));
-	lTemp = strtok(p->archivoInstrucciones[cTemp], " ");
-	while ((cTemp < p->cantidadDeLineas) && (strcmp(lTemp, valor) != 0)) {
-		cTemp++;
-	}
-	if (strcmp(lTemp, valor) == 0) {
-		p->contadorPrograma = cTemp;
-	}
-	++p->contadorPrograma;
-}
+	char line[100];
+	char* temp1 = calloc(1, sizeof(char));
 
+	for (int i = 0; i < p->cantidadDeLineas; ++i)
+	{
+		memcpy(line, p->archivoInstrucciones[i],
+			strlen(p->archivoInstrucciones[i])+1);
+		temp1=strtok(line," ");
+		if(strcmp(temp1, valor) == 0){
+			p->contadorPrograma=i;
+			break;
+		}
+	}
+}
+//listo
 void mBTFSC(processInfo* p, char* valor) {
 	/*
 	* Si el registro en la posición dada es 0 la siguiente instrucción
 	* es ejecutada.
 	*/
+	char* valorTemp2 = calloc(1, sizeof(char));
+	char* valorTemp3 = calloc(1, sizeof(char));
+
+	/**/
 	char* valReg = calloc(1, sizeof(char));
 	char* valPos = calloc(1, sizeof(char));
+	
 	valReg = strtok(valor, ",");
 	valPos = strtok(NULL, ",");
-	int posicion = atoi(valPos);
-	if (strcmp(valReg, "STATUS")) {
-		if (p->STATUS[posicion] == 0)
-			p->contadorPrograma++;
+
+	int posicion = 31 - atoi(valPos);
+	char line[100];
+	int lineaTemp = p->contadorPrograma+1;
+
+	if (strcmp(valReg, "STATUS") == 0) {
+		if(p->STATUS[posicion]==0){
+	
+			memcpy(line, p->archivoInstrucciones[lineaTemp],strlen(p->archivoInstrucciones[lineaTemp])+1);
+			valorTemp2 = strtok(line, " ");
+
+			while (strcmp(valorTemp2," ")<=0) {
+				++lineaTemp;
+				memcpy(line, p->archivoInstrucciones[lineaTemp],strlen(p->archivoInstrucciones[lineaTemp])+1);
+				valorTemp2 = strtok(line, " ");
+			}
+
+			valorTemp3 = strtok(NULL, " ");
+
+			++lineaTemp;
+			p->contadorPrograma=lineaTemp;	
+		}else{
+			++p->contadorPrograma;
+		}
 	} else if (strcmp(valReg, "PORTA") == 0) {
-		if (p->PORTA[posicion] == 0)
-			p->contadorPrograma++;
+		if(p->PORTA[posicion]==0){
+			memcpy(line, p->archivoInstrucciones[lineaTemp],strlen(p->archivoInstrucciones[lineaTemp])+1);
+			valorTemp2 = strtok(line, " ");
+
+			while (strcmp(valorTemp2," ")<=0) {
+				++lineaTemp;
+				memcpy(line, p->archivoInstrucciones[lineaTemp],strlen(p->archivoInstrucciones[lineaTemp])+1);
+				valorTemp2 = strtok(line, " ");
+			}
+
+			valorTemp3 = strtok(NULL, " ");
+
+			++lineaTemp;
+			p->contadorPrograma=lineaTemp;	
+		}else{
+			++p->contadorPrograma;
+		}
 	} else if (strcmp(valReg, "PORTB") == 0) {
-		if (p->PORTB[posicion] == 0)
-			p->contadorPrograma++;
+		if(p->PORTB[posicion]==0){
+	
+			memcpy(line, p->archivoInstrucciones[lineaTemp],strlen(p->archivoInstrucciones[lineaTemp])+1);
+			valorTemp2 = strtok(line, " ");
+
+			while (strcmp(valorTemp2," ")<=0) {
+				++lineaTemp;
+				memcpy(line, p->archivoInstrucciones[lineaTemp],strlen(p->archivoInstrucciones[lineaTemp])+1);
+				valorTemp2 = strtok(line, " ");
+			}
+
+			valorTemp3 = strtok(NULL, " ");
+
+			++lineaTemp;
+			p->contadorPrograma=lineaTemp;	
+		}else{
+			++p->contadorPrograma;
+		}
 	} else if (strcmp(valReg, "TRISA") == 0) {
-		if (p->TRISA[posicion] == 0)
-			p->contadorPrograma++;
+		if(p->TRISA[posicion]==0){
+	
+			memcpy(line, p->archivoInstrucciones[lineaTemp],strlen(p->archivoInstrucciones[lineaTemp])+1);
+			valorTemp2 = strtok(line, " ");
+
+			while (strcmp(valorTemp2," ")<=0) {
+				++lineaTemp;
+				memcpy(line, p->archivoInstrucciones[lineaTemp],strlen(p->archivoInstrucciones[lineaTemp])+1);
+				valorTemp2 = strtok(line, " ");
+			}
+
+			valorTemp3 = strtok(NULL, " ");
+
+			++lineaTemp;
+			p->contadorPrograma=lineaTemp;	
+		}else{
+			++p->contadorPrograma;
+		}
+	} else if (strcmp(valReg, "TRISB") == 0) {
+		if(p->TRISB[posicion]==0){
+	
+			memcpy(line, p->archivoInstrucciones[lineaTemp],strlen(p->archivoInstrucciones[lineaTemp])+1);
+			valorTemp2 = strtok(line, " ");
+
+			while (strcmp(valorTemp2," ")<=0) {
+				++lineaTemp;
+				memcpy(line, p->archivoInstrucciones[lineaTemp],strlen(p->archivoInstrucciones[lineaTemp])+1);
+				valorTemp2 = strtok(line, " ");
+			}
+
+			valorTemp3 = strtok(NULL, " ");
+
+			++lineaTemp;
+			p->contadorPrograma=lineaTemp;	
+		}else{
+			++p->contadorPrograma;
+		}
 	}
 }
 
+//listo
+void mBTFSS(processInfo* p, char* valor) {
+	/*
+	* Si el registro en la posición dada es 0 la siguiente instrucción
+	* es ejecutada.
+	*/
+	char* valorTemp2 = calloc(1, sizeof(char));
+	char* valorTemp3 = calloc(1, sizeof(char));
+
+	/**/
+	char* valReg = calloc(1, sizeof(char));
+	char* valPos = calloc(1, sizeof(char));
+
+	valReg = strtok(valor, ",");
+	valPos = strtok(NULL, ",");
+	
+	int posicion = 31 - atoi(valPos);
+	char line[100];
+	int lineaTemp = p->contadorPrograma+1;
+	
+	if (strcmp(valReg, "STATUS") == 0) {
+		if(p->STATUS[posicion]==1){
+	
+			memcpy(line, p->archivoInstrucciones[lineaTemp],strlen(p->archivoInstrucciones[lineaTemp])+1);
+			valorTemp2 = strtok(line, " ");
+
+			while (strcmp(valorTemp2," ")<=0) {
+				++lineaTemp;
+				memcpy(line, p->archivoInstrucciones[lineaTemp],strlen(p->archivoInstrucciones[lineaTemp])+1);
+				valorTemp2 = strtok(line, " ");
+			}
+
+			valorTemp3 = strtok(NULL, " ");
+
+			++lineaTemp;
+			p->contadorPrograma=lineaTemp;	
+		}else{
+			++p->contadorPrograma;
+		}
+	} else if (strcmp(valReg, "PORTA") == 0) {
+		if(p->PORTA[posicion]==1){
+			memcpy(line, p->archivoInstrucciones[lineaTemp],strlen(p->archivoInstrucciones[lineaTemp])+1);
+			valorTemp2 = strtok(line, " ");
+
+			while (strcmp(valorTemp2," ")<=0) {
+				++lineaTemp;
+				memcpy(line, p->archivoInstrucciones[lineaTemp],strlen(p->archivoInstrucciones[lineaTemp])+1);
+				valorTemp2 = strtok(line, " ");
+			}
+
+			valorTemp3 = strtok(NULL, " ");
+
+			++lineaTemp;
+			p->contadorPrograma=lineaTemp;	
+		}else{
+			++p->contadorPrograma;
+		}
+	} else if (strcmp(valReg, "PORTB") == 0) {
+		if(p->PORTB[posicion]==1){
+	
+			memcpy(line, p->archivoInstrucciones[lineaTemp],strlen(p->archivoInstrucciones[lineaTemp])+1);
+			valorTemp2 = strtok(line, " ");
+
+			while (strcmp(valorTemp2," ")<=0) {
+				++lineaTemp;
+				memcpy(line, p->archivoInstrucciones[lineaTemp],strlen(p->archivoInstrucciones[lineaTemp])+1);
+				valorTemp2 = strtok(line, " ");
+			}
+
+			valorTemp3 = strtok(NULL, " ");
+
+			++lineaTemp;
+			p->contadorPrograma=lineaTemp;	
+		}else{
+			++p->contadorPrograma;
+		}
+	} else if (strcmp(valReg, "TRISA") == 0) {
+		if(p->TRISA[posicion]==1){
+	
+			memcpy(line, p->archivoInstrucciones[lineaTemp],strlen(p->archivoInstrucciones[lineaTemp])+1);
+			valorTemp2 = strtok(line, " ");
+
+			while (strcmp(valorTemp2," ")<=0) {
+				++lineaTemp;
+				memcpy(line, p->archivoInstrucciones[lineaTemp],strlen(p->archivoInstrucciones[lineaTemp])+1);
+				valorTemp2 = strtok(line, " ");
+			}
+
+			valorTemp3 = strtok(NULL, " ");
+
+			++lineaTemp;
+			p->contadorPrograma=lineaTemp;	
+		}else{
+			++p->contadorPrograma;
+		}
+	} else if (strcmp(valReg, "TRISB") == 0) {
+		if(p->TRISB[posicion]==1){
+	
+			memcpy(line, p->archivoInstrucciones[lineaTemp],strlen(p->archivoInstrucciones[lineaTemp])+1);
+			valorTemp2 = strtok(line, " ");
+
+			while (strcmp(valorTemp2," ")<=0) {
+				++lineaTemp;
+				memcpy(line, p->archivoInstrucciones[lineaTemp],strlen(p->archivoInstrucciones[lineaTemp])+1);
+				valorTemp2 = strtok(line, " ");
+			}
+
+			valorTemp3 = strtok(NULL, " ");
+
+			++lineaTemp;
+			p->contadorPrograma=lineaTemp;	
+		}else{
+			++p->contadorPrograma;
+		}
+	}
+}
+
+//listo
 void mMOVLW(processInfo* p, char* valor) {
 	int i;
 	char* temp = calloc(1, sizeof(char));
 	
 	temp = strtok(valor, "'");   
 	temp = strtok(NULL, "'");    
-	
+	printf("%s\n", temp);
+	exit(0);
 	/*Lo convierte a entero para quitarle los ceros a la izquierda*/
 	int v = atoi(temp);
 	
@@ -515,7 +1074,7 @@ void mMOVLW(processInfo* p, char* valor) {
 	++p->contadorPrograma;
 }
 
-/*Suma a y b, y resultado se guarda en c*/
+/*Suma a y b, y resultado se guarda en c, listo*/
 void sumarRegistros(int* a, int* b, int* c) {
 	int acarreo = 0;
 	for (int i = 31; i >= 0; --i)
@@ -604,13 +1163,13 @@ void restarRegistros(int* a, int* b) {
 	}
 }
 
-void andFRegistros(int* a, int* b) {
+void andFRegistros(int* a, int* b, int* d) {
 	for (int i = 0; i < BITS; ++i)
 	{
 		if (a[i] && b[i]) {
-			a[i] = 1;
+			d[i] = 1;
 		} else {
-			a[i] = 0;
+			d[i] = 0;
 		}
 	}
 }

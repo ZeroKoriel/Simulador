@@ -1,6 +1,8 @@
+
 GOTO comenzar
 
 comenzar
+SUBWF PORTA,PORTB
 CLRF PORTB
 CLRF PORTA
 BSF STATUS,5

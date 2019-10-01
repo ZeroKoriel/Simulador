@@ -4,6 +4,7 @@
 #include <math.h>
 #include <string.h>
 #include <assert.h>
+#include <ctype.h>
 #include "DataTypes.h"
 
 void ejecutarInstruccion(processInfo*);
@@ -15,11 +16,13 @@ void comprobarNemotecnico(processInfo*, char*, char*);
 void limpiarRegistro(int*);
 void copiarRegistro(int*, int*);
 void andRegistros(int*, int*);
-void andFRegistros(int*, int*);
+void andFRegistros(int*, int*, int*);
 void orRegistros(int*, int*);
 void sumarRegistros(int*, int*, int*);
 void restarRegistros(int*, int*);
 void restarFRegistros(int*, int*, int*);
+
+void imprimir(processInfo*);
 
 /*funciones de los nemónicos*/
 void mCLRF(processInfo*, char*);
@@ -39,6 +42,7 @@ void mBSF(processInfo*, char*);
 void mCALL(processInfo*, char*);
 void mRETURN(processInfo*, char*);
 void mBTFSC(processInfo*, char*);
+void mBTFSS(processInfo*, char*);
 void mMOVLW(processInfo*, char*);
 
 #endif
