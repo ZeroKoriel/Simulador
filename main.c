@@ -286,7 +286,7 @@ static void activate (GtkApplication *app, gpointer user_data)
   gtk_fixed_put(GTK_FIXED(fixed), bottonCrear, 450, 400);
 
   gtk_widget_show_all (window);
-  tick_cb = g_timeout_add(150, (GSourceFunc) on_tick, GINT_TO_POINTER(sizeL));   
+  tick_cb = g_timeout_add(175, (GSourceFunc) on_tick, GINT_TO_POINTER(sizeL));   
 }
 
 

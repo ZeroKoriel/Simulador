@@ -64,6 +64,7 @@ typedef struct Process
 {
 	pthread_t hilo;	
 	processInfo* info;
+	int contadorE;
 }Process;
 
 typedef struct shedInfo

@@ -31,6 +31,7 @@ void initPlanificador(){
 void crearProceso(int id, int prioridad, TipoProceso tipo, char* file) {
 	Process* p;
 	p = calloc(1, sizeof(Process));
+	p->contadorE = 0;
 	p->info = calloc(1, sizeof(processInfo));
 	p->info->id = id;
 	p->info->prioridad = prioridad;
@@ -56,7 +57,7 @@ void ejecutar(Process* proceso) {
 
 /*Asigna un proceso a una cola dependiendo de su estado*/
 void cambioDeContexto(Process* proceso) {
-		if (proceso) {
+	if (proceso) {
 		switch (proceso->info->estado) {
 			case bloqueado:
 				insertarFinal(prosessPlanificador->cBloqueado, (void*)proceso);
@@ -86,6 +87,19 @@ void algoritmoFCFS() {
 	if (prosessPlanificador->enEjecucion && prosessPlanificador->enEjecucion->info) {
 		ejecutar(prosessPlanificador->enEjecucion);
 		cambioDeContexto(prosessPlanificador->enEjecucion);
+
+		/*Intenta nivelar las listas*/
+		int cantidad = prosessPlanificador->cBloqueado->cantidadNodos - prosessPlanificador->cListo->cantidadNodos;
+		if (cantidad > 0) {
+			for (int i = 0; i < cantidad; ++i)
+			{
+				Process* temp = obtener(prosessPlanificador->cBloqueado, 0);
+				if (temp && temp->info) {
+					insertarFinal(prosessPlanificador->cListo, temp);
+				}
+				eliminarElemento(prosessPlanificador->cBloqueado, 0);
+			}
+		}
 	}
 }
 
@@ -107,6 +121,16 @@ void algoritmoSJF() {
 void algoritmoPorPrioridad() {
 	if (prosessPlanificador->enEjecucion && prosessPlanificador->enEjecucion->info) {
 		ejecutar(prosessPlanificador->enEjecucion);
+
+		++prosessPlanificador->enEjecucion->contadorE;
+		if (prosessPlanificador->enEjecucion->contadorE % 2 == 0) {
+			if (prosessPlanificador->enEjecucion->info->prioridad > 1) {
+				prosessPlanificador->enEjecucion->info->prioridad--;
+			} else {
+				prosessPlanificador->enEjecucion->info->prioridad = 1 + rand() % 10;
+			}
+		}
+		
 		cambioDeContexto(prosessPlanificador->enEjecucion);
 	}
 }
@@ -114,6 +138,16 @@ void algoritmoPorPrioridad() {
 void algoritmoTR_RMS() {
 	if (prosessPlanificador->enEjecucion && prosessPlanificador->enEjecucion->info) {
 		ejecutar(prosessPlanificador->enEjecucion);
+
+		++prosessPlanificador->enEjecucion->contadorE;
+		if (prosessPlanificador->enEjecucion->contadorE % 2 == 0) {
+			if (prosessPlanificador->enEjecucion->info->prioridad > 1) {
+				prosessPlanificador->enEjecucion->info->prioridad--;
+			} else {
+				prosessPlanificador->enEjecucion->info->prioridad = 1 + rand() % 10;
+			}
+		}
+
 		cambioDeContexto(prosessPlanificador->enEjecucion);	
 	}
 }
@@ -148,8 +182,7 @@ void ordenarPorTamanio() {
     	int swapped = 0;
     	for (int i = 0; i < size - step - 1; ++i)
     	{
-      		// To sort in descending order, change > to < in this line.
-      		if (vector[i]->info->prioridad > vector[i + 1]->info->prioridad)
+      		if (vector[i]->info->cantidadDeLineas > vector[i + 1]->info->cantidadDeLineas)
       		{
         		Process* temp = vector[i];
         		vector[i] = vector[i + 1];
@@ -157,7 +190,6 @@ void ordenarPorTamanio() {
         		swapped = 1;
       		}
     	}
-    	// If there is not swapping in the last swap, then the array is already sorted.
     	if (swapped == 0) {
      		break;
     	}
@@ -420,22 +452,24 @@ void shedTask() {
 			ordenarPorPrioridad();
 			eliminarElemento(prosessPlanificador->cBloqueado, 0);
 		}
+
 		if (prosessPlanificador->cListo->cantidadNodos > 0) {
 			Process* temp = (Process*) obtener(prosessPlanificador->cListo, 0);
 			eliminarElemento(prosessPlanificador->cListo, 0);
 			if (temp) {
 				temp->info->estado = ejecucion;
+				prosessPlanificador->enEjecucion = temp;
 			}
 		} else {
-				if (prosessPlanificador->cBloqueado->cantidadNodos > 0) {
-					Process* temp = (Process*) obtener(prosessPlanificador->cListo, 0);
-					eliminarElemento(prosessPlanificador->cListo, 0);
-					if (temp) {
-						insertarFinal(prosessPlanificador->cListo, temp);
-						ordenarPorPrioridad();
-					} 
-				}
+			if (prosessPlanificador->cBloqueado->cantidadNodos > 0) {
+				Process* temp = (Process*) obtener(prosessPlanificador->cListo, 0);
+				eliminarElemento(prosessPlanificador->cListo, 0);
+				if (temp) {
+					insertarFinal(prosessPlanificador->cListo, temp);
+					ordenarPorPrioridad();
+				} 
 			}
+		}
 	return;
 }
 

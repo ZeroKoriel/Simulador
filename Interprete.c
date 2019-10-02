@@ -8,8 +8,33 @@ void ejecutarInstruccion(processInfo* proceso) {
 	char line[100];
 	memcpy(line, proceso->archivoInstrucciones[proceso->contadorPrograma],
 		strlen(proceso->archivoInstrucciones[proceso->contadorPrograma])+1);
-	printf("%s\n", proceso->archivoInstrucciones[proceso->contadorPrograma]);
 	buscarLinea(proceso, line);
+}
+
+//listo
+void buscarLinea(processInfo* p, char* line) {
+	char* nemoTemp = calloc(1, sizeof(char));
+	char* valorTemp = calloc(1, sizeof(char));
+
+	nemoTemp = strtok(line, " ");
+	valorTemp = strtok(NULL, " ");
+
+	
+	int n=strcmp(nemoTemp," ");
+
+	if (strcmp(nemoTemp," ")>0) {
+		comprobarNemotecnico(p, nemoTemp, valorTemp);
+	} else {
+		while (strcmp(nemoTemp," ")<=0) {
+			++p->contadorPrograma;
+			char linea[100];
+			memcpy(linea, p->archivoInstrucciones[p->contadorPrograma],
+				strlen(p->archivoInstrucciones[p->contadorPrograma])+1);
+			nemoTemp = strtok(linea, " ");
+		}
+		valorTemp = strtok(NULL, " ");
+		comprobarNemotecnico(p, nemoTemp, valorTemp);
+	}
 }
 
 //listo
@@ -51,32 +76,6 @@ void imprimir(processInfo* p) {
 		printf("%d ", p->STATUS[i]);
 	}
 	printf("%\n***************************\n");
-}
-
-//listo
-void buscarLinea(processInfo* p, char* line) {
-	char* nemoTemp = calloc(1, sizeof(char));
-	char* valorTemp = calloc(1, sizeof(char));
-
-	nemoTemp = strtok(line, " ");
-	valorTemp = strtok(NULL, " ");
-
-	
-	int n=strcmp(nemoTemp," ");
-
-	if (strcmp(nemoTemp," ")>0) {
-		comprobarNemotecnico(p, nemoTemp, valorTemp);
-	} else {
-		while (strcmp(nemoTemp," ")<=0) {
-			++p->contadorPrograma;
-			char linea[100];
-			memcpy(linea, p->archivoInstrucciones[p->contadorPrograma],
-				strlen(p->archivoInstrucciones[p->contadorPrograma])+1);
-			nemoTemp = strtok(linea, " ");
-		}
-		valorTemp = strtok(NULL, " ");
-		comprobarNemotecnico(p, nemoTemp, valorTemp);
-	}
 }
 
 //listo
@@ -1047,9 +1046,8 @@ void mMOVLW(processInfo* p, char* valor) {
 	char* temp = calloc(1, sizeof(char));
 	
 	temp = strtok(valor, "'");   
-	temp = strtok(NULL, "'");    
-	printf("%s\n", temp);
-	exit(0);
+	temp = strtok(NULL, "'");
+	
 	/*Lo convierte a entero para quitarle los ceros a la izquierda*/
 	int v = atoi(temp);
 	

@@ -29,17 +29,11 @@
 * - Registros				Falta
 * - Prioridad
 */
-
-#define CANTIDADHILOS 5
-#define IDPLANIFICADOR 1000
-#define MAXL 10000
-
 static pthread_cond_t cPlanificador;
 static pthread_mutex_t mPlanificador;
 
 /*estructura con la info necesaria para el planificador*/
 shedInfo *prosessPlanificador;
-Process *process[CANTIDADHILOS];
 
 char* procesoEnEjecucion;
 char** listaListos;
