@@ -19,5 +19,5 @@ Interprete.o:
 run:
 	./ejecutable
 clean:
-	rm -rf main.o Proceso.o Interprete.o ejecutable *.h.gch
+	rm -rf main.o Proceso.o Interprete.o ejecutable ArchivoData.o *.h.gch
 	clear

@@ -484,7 +484,6 @@ void* runProceso(void* args) {
 	
 	while (info->contadorPrograma < info->cantidadDeLineas) {
 		ejecutarInstruccion(info);
-
 		if (info->tipo == lotes) {
 			srand(time(NULL));
 			int val = rand() % 10;

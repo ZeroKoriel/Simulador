@@ -15,12 +15,13 @@ void comprobarNemotecnico(processInfo*, char*, char*);
 /*funciones de apoyo*/
 void limpiarRegistro(int*);
 void copiarRegistro(int*, int*);
-void andRegistros(int*, int*);
-void andFRegistros(int*, int*, int*);
+
+void andRegistros(int*, int*, int);
+
 void orRegistros(int*, int*);
-void sumarRegistros(int*, int*, int*);
-void restarRegistros(int*, int*);
-void restarFRegistros(int*, int*, int*);
+
+void sumarRegistros(int*, int*, int);
+void restarRegistros(int*, int*, int);
 
 void imprimir(processInfo*);
 
