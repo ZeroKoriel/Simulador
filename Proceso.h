@@ -12,6 +12,7 @@
 #include <glib/gmacros.h>
 #include <cairo.h>
 
+#include "AdministradorM.h"
 #include "Interprete.h"
 #include "ADT/Lista.h"
 #include "DataTypes.h"
@@ -55,7 +56,7 @@ void ordenarPorPrioridad();
 void ordenarPorTamanio();
 void shedTask();
 void escogerAlgoritmo();
-void crearProceso(int, int, TipoProceso, char*);
+void crearProceso(int, int, int, TipoProceso, char*);
 void eliminarProceso(Process*);
 void balancearColas();
 void* runPlanificador(void*);

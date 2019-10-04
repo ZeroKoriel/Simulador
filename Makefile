@@ -1,6 +1,6 @@
 all: ejecutable
 
-ejecutable: main.o Proceso.o  Nodo.o Lista.o ArchivoBusiness.o ArchivoData.o Interprete.o
+ejecutable: main.o Proceso.o  Nodo.o Lista.o ArchivoBusiness.o ArchivoData.o Interprete.o AdministradorM.o
 	$(CC) -o ejecutable *.o `pkg-config --cflags gtk+-3.0` `pkg-config --libs gtk+-3.0` -lpthread
 main.o:
 	$(CC) -c main.c `pkg-config --cflags gtk+-3.0` `pkg-config --libs gtk+-3.0`
@@ -16,8 +16,10 @@ ArchivoData.o:
 	$(CC) -c ArchivoData.h ArchivoData.c
 Interprete.o:
 	$(CC) -c Interprete.h Interprete.c
+AdministradorM.o:
+	$(CC) -c AdministradorM.h AdministradorM.c
 run:
 	./ejecutable
 clean:
-	rm -rf main.o Proceso.o Interprete.o ejecutable ArchivoData.o *.h.gch
+	rm -rf main.o Proceso.o AdministradorM.o ejecutable  *.h.gch
 	clear

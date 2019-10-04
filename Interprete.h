@@ -17,9 +17,7 @@ void limpiarRegistro(int*);
 void copiarRegistro(int*, int*);
 
 void andRegistros(int*, int*, int);
-
 void orRegistros(int*, int*);
-
 void sumarRegistros(int*, int*, int);
 void restarRegistros(int*, int*, int);
 

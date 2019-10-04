@@ -1,13 +1,18 @@
 #ifndef DATATYPES_H
 #define DATATYPES_H 
 
-#include <string.h>
-#include <pthread.h>
-#include <stdbool.h>
-
 #include "ADT/Lista.h"
 
 #define BITS 32
+
+static Lista* memoriaVirtual;
+
+typedef struct Bloque
+{
+	int ocupado;
+	int espacio[8];
+	char owner[10];
+}Bloque;
 
 typedef enum Tipo
 {
@@ -40,6 +45,7 @@ typedef struct processInfo
 	int quantum;
 	int contadorPrograma;
 	int cantidadDeLineas;
+	
 	TipoProceso tipo;
 
 	int PORTA[BITS];
@@ -65,6 +71,8 @@ typedef struct Process
 	pthread_t hilo;	
 	processInfo* info;
 	int contadorE;
+	int bloqueInicio;
+	int bloqueFinal;
 }Process;
 
 typedef struct shedInfo

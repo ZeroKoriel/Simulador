@@ -18,6 +18,7 @@ TipoProceso tipoP;
 GtkWidget *window;
 GtkWidget *drawing;
 GtkWidget *entryID;
+GtkWidget *entryBITS;
 
 static gboolean on_tick (gpointer user_data) {
     gint64 current = g_get_real_time ();
@@ -146,6 +147,7 @@ static void bCrearAleatorio (GtkWidget *widget, gpointer   user_data)
   int tipo = 0;
   int prioridad = 0;
   int id = 0;
+  int bits = 0;
 
   TipoProceso tipoTemp;
   srand(time(NULL));
@@ -155,15 +157,16 @@ static void bCrearAleatorio (GtkWidget *widget, gpointer   user_data)
     tipo = rand() % 3;
     prioridad = 1 + rand() % 9;
     id = rand() %1000;
+    bits = rand() %1000;
     switch (tipo) {
       case 0://lotes
-        crearProceso(id, prioridad, lotes, "asm.txt");
+        crearProceso(id, bits, prioridad, lotes, "asm.txt");
         break;
       case 1://t real
-        crearProceso(id, prioridad, tReal, "asm.txt");
+        crearProceso(id, bits, prioridad, tReal, "asm.txt");
         break;
       case 2: //interactivo
-        crearProceso(id, prioridad, interactivo, "asm.txt");
+        crearProceso(id, bits, prioridad, interactivo, "asm.txt");
         break;
     }
   }
@@ -184,9 +187,15 @@ static void bCrear (GtkWidget *widget, gpointer   user_data)
   gtk_widget_destroy (wdg);
 
   const gchar *tID = gtk_entry_get_text((GtkEntry *)entryID);
+  const gchar *tBITS = gtk_entry_get_text((GtkEntry *)entryBITS);
+
   int id = atoi(tID);
+  int bits = atoi(tBITS);
+  
   gtk_entry_set_text((GtkEntry *)entryID, " ");
-  crearProceso(id, prioridad, tipoP, filename);
+  gtk_entry_set_text((GtkEntry *)entryBITS, " ");
+
+  crearProceso(id, bits, prioridad, tipoP, filename);
 }
 
 
@@ -268,10 +277,18 @@ static void activate (GtkApplication *app, gpointer user_data)
   gtk_fixed_put(GTK_FIXED(fixed), labelID, 300, 300);
   gtk_widget_set_size_request(labelID, 75, 30);
 
-  
   entryID = gtk_entry_new();
   gtk_fixed_put(GTK_FIXED(fixed), entryID, 400, 300);
   gtk_widget_set_size_request(entryID, 75, 30);  
+
+  GtkWidget *labelBITS;
+  labelBITS = gtk_label_new("Cantidad de bits");
+  gtk_fixed_put(GTK_FIXED(fixed), labelBITS, 275, 350);
+  gtk_widget_set_size_request(labelBITS, 75, 30);
+
+  entryBITS = gtk_entry_new();
+  gtk_fixed_put(GTK_FIXED(fixed), entryBITS, 400, 350);
+  gtk_widget_set_size_request(entryBITS, 75, 30);  
 
   GtkWidget *bottonCrearAleatorio;
   bottonCrearAleatorio = gtk_button_new_with_label("Aleatorio");

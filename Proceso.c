@@ -24,24 +24,31 @@ void initPlanificador(){
 	prosessPlanificador->pPlanificador->info->quantum = 100/10;
 	prosessPlanificador->pPlanificador->info->estado = bloqueado;
 	prosessPlanificador->pPlanificador->info->contadorPrograma = 0;
-
+	iniciarMemoria();
 	pthread_create(&(prosessPlanificador->hilo), NULL, (void*)runPlanificador, (void*)(prosessPlanificador));
 }
 
-void crearProceso(int id, int prioridad, TipoProceso tipo, char* file) {
+void crearProceso(int id, int bits, int prioridad, TipoProceso tipo, char* file) {
 	Process* p;
 	p = calloc(1, sizeof(Process));
-	p->contadorE = 0;
 	p->info = calloc(1, sizeof(processInfo));
-	p->info->id = id;
-	p->info->prioridad = prioridad;
-	p->info->quantum = 100/prioridad;
-	p->info->estado = bloqueado;
-	p->info->tipo = tipo;
-	p->info->contadorPrograma = 0;
-	leerArchivo(p->info, file);
-	pthread_create(&(p->hilo), NULL, (void*)runProceso, (void*)(p->info));
-	insertarFinal(prosessPlanificador->cBloqueado, (void*)p);
+	if (solicitarMemoria(p, bits)) {
+		p->contadorE = 0;
+		p->info->id = id;
+		p->info->prioridad = prioridad;
+		p->info->quantum = 100/prioridad;
+		p->info->estado = bloqueado;
+		p->info->tipo = tipo;
+		p->info->contadorPrograma = 0;
+	
+		leerArchivo(p->info, file);
+		pthread_create(&(p->hilo), NULL, (void*)runProceso, (void*)(p->info));
+		insertarFinal(prosessPlanificador->cBloqueado, (void*)p);
+	} else {
+		free(p->info);
+		free(p);
+		printf("%s\n", "Puntero liberado por falta de memoria");
+	}
 }
 
 /*Guarda al proceso en ejecución y le da la señal para que inicie*/
@@ -358,17 +365,17 @@ void escogerAlgoritmo() {
 		int valor = rand() % 2;
 		if (valor) { //Si es 1 escoge SFJ
 			prosessPlanificador->algoritmoActual = sfj;
-			printf("%s\n", "Cambia a SFJ");
+			//printf("%s\n", "Cambia a SFJ");
 		} else { //Si no escoge round robin
 			prosessPlanificador->algoritmoActual = ARoundR;
-			printf("%s\n", "Cambia a Round Robin");
+			//printf("%s\n", "Cambia a Round Robin");
 		}
 	} else if (cLotes > cInteractivo && cLotes > cTiempo) {
 		prosessPlanificador->algoritmoActual = AFcfs;
-		printf("%s\n", "Cambia a plaficación por lotes");
+	//	printf("%s\n", "Cambia a plaficación por lotes");
 	} else if (cTiempo > cInteractivo && cTiempo > cLotes) {
 		prosessPlanificador->algoritmoActual = tiempoReal;
-		printf("%s\n", "Cambia a planificación en tiempo real");
+		//printf("%s\n", "Cambia a planificación en tiempo real");
 	}
 }
 
