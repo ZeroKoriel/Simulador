@@ -28,7 +28,7 @@ void initPlanificador(){
 	pthread_create(&(prosessPlanificador->hilo), NULL, (void*)runPlanificador, (void*)(prosessPlanificador));
 }
 
-void crearProceso(int id, int bits, int prioridad, TipoProceso tipo, char* file) {
+void crearProceso(int id, int bits, int prioridad, TipoProceso tipoP, char* file) {
 	Process* p;
 	p = calloc(1, sizeof(Process));
 	p->info = calloc(1, sizeof(processInfo));
@@ -38,12 +38,12 @@ void crearProceso(int id, int bits, int prioridad, TipoProceso tipo, char* file)
 		p->info->prioridad = prioridad;
 		p->info->quantum = 100/prioridad;
 		p->info->estado = bloqueado;
-		p->info->tipo = tipo;
+		p->info->tipo = tipoP;
 		p->info->contadorPrograma = 0;
-	
+		printf("%s\n", "antes de leerArchivo");
 		leerArchivo(p->info, file);
+		insertarFinal(prosessPlanificador->cBloqueado, p);
 		pthread_create(&(p->hilo), NULL, (void*)runProceso, (void*)(p->info));
-		insertarFinal(prosessPlanificador->cBloqueado, (void*)p);
 	} else {
 		free(p->info);
 		free(p);
@@ -53,8 +53,12 @@ void crearProceso(int id, int bits, int prioridad, TipoProceso tipo, char* file)
 
 /*Guarda al proceso en ejecución y le da la señal para que inicie*/
 void ejecutar(Process* proceso) {
+	//if (proceso->info->estado == terminado || !proceso) {
+	//	eliminarProceso(proceso);
+//		return;
+//	}
 	pthread_mutex_lock(&mPlanificador);
-
+	proceso->info->estado = ejecucion;
 	prosessPlanificador->enEjecucion = proceso;
 	pthread_cond_signal(&(proceso->info->cond));
 
@@ -81,12 +85,16 @@ void cambioDeContexto(Process* proceso) {
 
 /*Libera la memoria reservada para la estructura del proceso*/
 void eliminarProceso(Process* proceso) {
+	liberarMemoria(proceso);
 	if (proceso->info) {
 		free(proceso->info);
 		proceso->info = NULL;
+		if (proceso) {
+			free(proceso);
+			proceso = NULL;
+		}
 	}
-	free(proceso);
-	proceso = NULL;
+	prosessPlanificador->enEjecucion = NULL;
 }
 
 /*Algoritmo de planificacion usado por el hilo planificador*/
@@ -95,7 +103,7 @@ void algoritmoFCFS() {
 		ejecutar(prosessPlanificador->enEjecucion);
 		cambioDeContexto(prosessPlanificador->enEjecucion);
 
-		/*Intenta nivelar las listas*/
+		/*Intenta nivelar las listas
 		int cantidad = prosessPlanificador->cBloqueado->cantidadNodos - prosessPlanificador->cListo->cantidadNodos;
 		if (cantidad > 0) {
 			for (int i = 0; i < cantidad; ++i)
@@ -107,13 +115,16 @@ void algoritmoFCFS() {
 				eliminarElemento(prosessPlanificador->cBloqueado, 0);
 			}
 		}
+		*/
 	}
 }
 
 void algoritmoRoundRobin() {
 	if (prosessPlanificador->enEjecucion && prosessPlanificador->enEjecucion->info) {
 		prosessPlanificador->enEjecucion->info->quantum = 20;
+	//	printf("%s %d %s %d\n", "antes de ejecutar en algoritmoRoundRobin", prosessPlanificador->enEjecucion->info->estado, "id", prosessPlanificador->enEjecucion->info->id);
 		ejecutar(prosessPlanificador->enEjecucion);
+	//	printf("%s %d %s %d\n", "luego de ejecutar en algoritmoRoundRobin",prosessPlanificador->enEjecucion->info->estado, "id", prosessPlanificador->enEjecucion->info->id);
 		cambioDeContexto(prosessPlanificador->enEjecucion);
 	}
 }
@@ -273,6 +284,7 @@ void balancearColas() {
 void* runPlanificador(void* args) {
 	while (true) {
 		(50000);
+	//	printf("%s\n", "277");
 		shedTask();
 		escogerAlgoritmo();
 		switch(prosessPlanificador->algoritmoActual) {
@@ -301,82 +313,58 @@ void* runPlanificador(void* args) {
 }
 
 void escogerAlgoritmo() {
-	int cPl = prosessPlanificador->cListo->cantidadNodos;
-	int cPb = prosessPlanificador->cBloqueado->cantidadNodos;
-	int total = cPl + cPb;
-	int cLotes = 0;
-	int cInteractivo = 0;
-	int cTiempo = 0;
-	Process* temp;
-
-	/*El porcentaje se tomaría de las dos colas */
-
-	/*Cuenta los tipos en la lista de listos*/
-	for (int i = 0; i < cPl; ++i)
-	{
-		temp = obtener(prosessPlanificador->cListo, i);
-		if (temp && temp->info) {
-			switch(temp->info->tipo) {
-				case interactivo:
-					cInteractivo++;
-					break;
-				case lotes:
-					cLotes++;
-					break;
-				case tReal:
-					cTiempo++;
-					break;
-			}
-		}
+	int cantidadBloqueados = prosessPlanificador->cBloqueado->cantidadNodos;
+	int cantidadListos = prosessPlanificador->cListo->cantidadNodos;
+	int total = cantidadBloqueados + cantidadListos;
+	printf("%s %d\n", "pendejo", total);
+	if (total <= 0) {
+		return;
 	}
+ 
+	double interactivos = 0.0;
+	double lote = 0.0;
+	double tiempo = 0.0;
 
-	for (int i = 0; i < cPb; ++i)
+	Process* temp;
+	for (int i = 0; i < cantidadBloqueados; ++i)
 	{
 		temp = obtener(prosessPlanificador->cBloqueado, i);
-		if (temp && temp->info) {
-			switch(temp->info->tipo) {
-				case interactivo:
-					cInteractivo++;
-					break;
-				case lotes:
-					cLotes++;
-					break;
-				case tReal:
-					cTiempo++;
-					break;
-			}
-		}
+		switch(temp->info->tipo) {
+			case interactivo:
+				++interactivos;
+				break;
+			case lotes:
+				++lote;
+				break;
+			case tReal:
+				++tiempo;
+				break;
+			default: break;
+		}	
 	}
 
-	if (cInteractivo != 0) {
-		cInteractivo = total / cInteractivo;
+	for (int i = 0; i < cantidadListos; ++i)
+	{
+		temp = obtener(prosessPlanificador->cListo, i);
+		switch(temp->info->tipo) {
+			case interactivo:
+				++interactivos;
+				break;
+			case lotes:
+				++lote;
+				break;
+			case tReal:
+				++tiempo;
+				break;
+			default: break;
+		}	
 	}
+	printf("%s\n", "gordo feo");
+	interactivos /= total;
+	lote /= total;
+	tiempo /= total;
 
-	if (cLotes != 0) {
-		cLotes = total / cLotes;
-	}
-
-	if (cTiempo != 0) {
-		cTiempo = total / cTiempo;
-	}
-
-	if (cInteractivo > cLotes && cInteractivo > cTiempo) {
-		srand(time(NULL));
-		int valor = rand() % 2;
-		if (valor) { //Si es 1 escoge SFJ
-			prosessPlanificador->algoritmoActual = sfj;
-			//printf("%s\n", "Cambia a SFJ");
-		} else { //Si no escoge round robin
-			prosessPlanificador->algoritmoActual = ARoundR;
-			//printf("%s\n", "Cambia a Round Robin");
-		}
-	} else if (cLotes > cInteractivo && cLotes > cTiempo) {
-		prosessPlanificador->algoritmoActual = AFcfs;
-	//	printf("%s\n", "Cambia a plaficación por lotes");
-	} else if (cTiempo > cInteractivo && cTiempo > cLotes) {
-		prosessPlanificador->algoritmoActual = tiempoReal;
-		//printf("%s\n", "Cambia a planificación en tiempo real");
-	}
+	printf("interactivos %f lotes %f tiempo real %f\n", interactivos, lote, tiempo);
 }
 
 /*
@@ -414,15 +402,15 @@ void shedTask() {
 		if (prosessPlanificador->cListo->cantidadNodos > 0) {
 			Process* temp = (Process*) obtener(prosessPlanificador->cListo, 0);
 			eliminarElemento(prosessPlanificador->cListo, 0);
-			if (temp) {
-				temp->info->estado = ejecucion;
+			if (temp && temp->info->estado != terminado) {
+				//temp->info->estado = ejecucion;
 				prosessPlanificador->enEjecucion = temp;
 			}
 		} else {
 			if (prosessPlanificador->cBloqueado->cantidadNodos > 0) {
 				Process* temp = (Process*) obtener(prosessPlanificador->cListo, 0);
 				eliminarElemento(prosessPlanificador->cListo, 0);
-				if (temp) {
+				if (temp && temp->info->estado != terminado) {
 					insertarFinal(prosessPlanificador->cListo, temp);
 					ordenarPorTamanio();
 				} 
@@ -438,15 +426,15 @@ void shedTask() {
 		if (prosessPlanificador->cListo->cantidadNodos > 0) {
 			Process* temp = (Process*) obtener(prosessPlanificador->cListo, 0);
 			eliminarElemento(prosessPlanificador->cListo, 0);
-			if (temp) {
-				temp->info->estado = ejecucion;
+			if (temp && temp->info->estado != terminado) {
+				//temp->info->estado = ejecucion;
 				prosessPlanificador->enEjecucion = temp;
 			}
 		} else {
 			if (prosessPlanificador->cBloqueado->cantidadNodos > 0) {
 				Process* temp = (Process*) obtener(prosessPlanificador->cListo, 0);
 				eliminarElemento(prosessPlanificador->cListo, 0);
-				if (temp) {
+				if (temp && temp->info->estado != terminado) {
 					insertarFinal(prosessPlanificador->cListo, temp);
 				} 
 			}
@@ -463,15 +451,15 @@ void shedTask() {
 		if (prosessPlanificador->cListo->cantidadNodos > 0) {
 			Process* temp = (Process*) obtener(prosessPlanificador->cListo, 0);
 			eliminarElemento(prosessPlanificador->cListo, 0);
-			if (temp) {
-				temp->info->estado = ejecucion;
+			if (temp && temp->info->estado != terminado) {
+				//temp->info->estado = ejecucion;
 				prosessPlanificador->enEjecucion = temp;
 			}
 		} else {
 			if (prosessPlanificador->cBloqueado->cantidadNodos > 0) {
 				Process* temp = (Process*) obtener(prosessPlanificador->cListo, 0);
 				eliminarElemento(prosessPlanificador->cListo, 0);
-				if (temp) {
+				if (temp && temp->info->estado != terminado) {
 					insertarFinal(prosessPlanificador->cListo, temp);
 					ordenarPorPrioridad();
 				} 
@@ -517,9 +505,9 @@ void* runProceso(void* args) {
 		}
 		usleep(100);
 	}
-	pthread_mutex_unlock(&(info->mutex));
 	pthread_cond_signal(&cPlanificador);
 	info->estado = terminado;
+	pthread_mutex_unlock(&(info->mutex));
 }
 
 /*En proceso, preguntar*/

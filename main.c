@@ -124,15 +124,15 @@ static void on_changedTipo (GtkComboBox *widget, gpointer   user_data)
   int opcion;
   opcion = gtk_combo_box_get_active(GTK_COMBO_BOX(combo_box));
   switch(opcion) {
-    case 1:
+    case 0:
       tipoP = lotes;
       printf("%s\n", "Cambia a Lotes");
       break;
-    case 2: 
+    case 1: 
       tipoP = tReal;
       printf("%s\n", "Cambia a Tiempo Real");
       break;
-    case 3:
+    case 2:
       tipoP = interactivo;
       printf("%s\n", "Cambia a Iterativo");
       break;
@@ -149,15 +149,15 @@ static void bCrearAleatorio (GtkWidget *widget, gpointer   user_data)
   int id = 0;
   int bits = 0;
 
-  TipoProceso tipoTemp;
+  tipoP = lotes;
   srand(time(NULL));
 
   for (int i = 0; i < 10; ++i)
   {
     tipo = rand() % 3;
     prioridad = 1 + rand() % 9;
-    id = rand() %1000;
-    bits = rand() %1000;
+    id = rand() % 1000;
+    bits = rand() % 100;
     switch (tipo) {
       case 0://lotes
         crearProceso(id, bits, prioridad, lotes, "asm.txt");
