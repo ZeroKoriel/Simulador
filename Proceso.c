@@ -40,7 +40,6 @@ void crearProceso(int id, int bits, int prioridad, TipoProceso tipoP, char* file
 		p->info->estado = bloqueado;
 		p->info->tipo = tipoP;
 		p->info->contadorPrograma = 0;
-		printf("%s\n", "antes de leerArchivo");
 		leerArchivo(p->info, file);
 		insertarFinal(prosessPlanificador->cBloqueado, p);
 		pthread_create(&(p->hilo), NULL, (void*)runProceso, (void*)(p->info));
@@ -316,11 +315,10 @@ void escogerAlgoritmo() {
 	int cantidadBloqueados = prosessPlanificador->cBloqueado->cantidadNodos;
 	int cantidadListos = prosessPlanificador->cListo->cantidadNodos;
 	int total = cantidadBloqueados + cantidadListos;
-	printf("%s %d\n", "pendejo", total);
-	if (total <= 0) {
-		return;
-	}
  
+ 	if (total <= 0) {
+ 		return;
+ 	}
 	double interactivos = 0.0;
 	double lote = 0.0;
 	double tiempo = 0.0;
@@ -359,12 +357,28 @@ void escogerAlgoritmo() {
 			default: break;
 		}	
 	}
-	printf("%s\n", "gordo feo");
+	
 	interactivos /= total;
 	lote /= total;
 	tiempo /= total;
 
-	printf("interactivos %f lotes %f tiempo real %f\n", interactivos, lote, tiempo);
+	if (interactivos >= lote && interactivos >= tiempo) {
+		srand(time(NULL));
+		int val = rand() % 100;
+		if (val > 50 ) {
+			prosessPlanificador->algoritmoActual = sfj;
+			//printf("%s\n", "Cambia a sfj");
+		} else {
+			prosessPlanificador->algoritmoActual = ARoundR;
+			//printf("%s\n", "Cambia a round robin");
+		}
+	} else if (lote >= interactivos && lote >= tiempo) {
+		prosessPlanificador->algoritmoActual = AFcfs;
+		//printf("%s\n", "Cambia a fcfs");
+	} else if (tiempo >= interactivos && tiempo >= lote) {
+		prosessPlanificador->algoritmoActual = tiempoReal;
+	//	printf("%s\n", "Cambia a tiempo real");
+	}
 }
 
 /*

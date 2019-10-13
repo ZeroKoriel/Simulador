@@ -142,6 +142,33 @@ static void on_changedTipo (GtkComboBox *widget, gpointer   user_data)
   }
 }
 
+static void on_changedAlgoritmo (GtkComboBox *widget, gpointer user_data) {
+  GtkComboBox *combo_box = widget;
+
+  int opcion;
+  opcion = gtk_combo_box_get_active(GTK_COMBO_BOX(combo_box));
+  switch(opcion) {
+    case 1: 
+      tipoAjuste = primerA;
+      break;
+    case 2:
+      tipoAjuste = segundoA;
+      break;
+    case 3:
+      tipoAjuste = mejorA;
+      break;
+    case 4:
+      tipoAjuste = peorA;
+      break;
+    case 5:
+      tipoAjuste = aRapido;
+      break;
+    default:
+      printf("%s\n", "Opción no soportada por el combobox");
+      break;
+  }
+}
+
 static void bCrearAleatorio (GtkWidget *widget, gpointer   user_data)
 {
   int tipo = 0;
@@ -212,7 +239,7 @@ static void activate (GtkApplication *app, gpointer user_data)
   GtkWidget *combo_box;
   GtkWidget *combo_boxPrioridad; 
   GtkWidget *combo_boxTipo;   
-
+  tipoAjuste = primerA;
   window = gtk_application_window_new (app);
   gtk_window_set_title (GTK_WINDOW (window), "Simulación");
   gtk_window_set_default_size (GTK_WINDOW (window), 800, 600);
@@ -236,6 +263,17 @@ static void activate (GtkApplication *app, gpointer user_data)
   g_signal_connect (combo_box, "changed", G_CALLBACK (on_changedAlgoritmos), NULL);
   gtk_fixed_put(GTK_FIXED(fixed), combo_box, 400, 150);
   gtk_widget_set_size_request(combo_box, 80, 30);
+
+  GtkWidget *comboMemoria = gtk_combo_box_text_new ();
+  const char *tipoMemoria[] = {"Seleccione", "Primer ajuste", "Segundo ajuste", 
+  "Mejor ajuste", "Peor ajuste", "Ajuste rápido"};
+  for (i = 0; i < G_N_ELEMENTS (tipoMemoria); i++){
+    gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT (comboMemoria), tipoMemoria[i]);
+  }
+  gtk_combo_box_set_active (GTK_COMBO_BOX (comboMemoria), 0);
+  g_signal_connect (comboMemoria, "changed", G_CALLBACK (on_changedAlgoritmo), NULL);
+  gtk_fixed_put(GTK_FIXED(fixed), comboMemoria, 550, 150);
+  gtk_widget_set_size_request(comboMemoria, 80, 30);  
 
   GtkWidget *labelAlgoritmo;
   labelAlgoritmo = gtk_label_new("Algoritmo");

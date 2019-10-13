@@ -21,5 +21,5 @@ AdministradorM.o:
 run:
 	./ejecutable
 clean:
-	rm -rf Proceso.o main.o AdministradorM.o ejecutable  *.h.gch
+	rm -rf *.o  *.h.gch
 	clear

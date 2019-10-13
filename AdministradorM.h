@@ -17,8 +17,24 @@ typedef enum Ajuste
 	aRapido
 }Ajuste;
 
+typedef struct EspacioBloque
+{
+	int inicio;
+	int final;
+	int cantidad;
+}EspacioBloque;
+
+typedef struct TablaIndice
+{
+	int cantidadB;
+	int *indices;
+}TablaIndice;
+
 static int bloquesLibres;
 static int indiceSegundoAjuste;
+
+TablaIndice *indices[MAXBLOQUES];
+Lista *listaEspacios;
 Ajuste tipoAjuste;
 
 
@@ -42,8 +58,13 @@ int escribirUnionEnMemoria();
 
 int buscarIndiceInicio(int);
 int buscarIndiceInicioSegundoAjuste(int);
+int buscarIndiceMejorAjuste(int);
+int buscarIndicePeorAjuste(int);
 int marcarOcupado(Process*, int, int);
 int acomodarLista();
+
+void insertarAlIndice(int);
+int busarIndicesPorTamanio(Process*, int, int*);
 
 void mostrarMemoria();
 
